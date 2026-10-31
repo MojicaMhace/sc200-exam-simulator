@@ -201,7 +201,16 @@ function selectBlueprintQuestions(questions, total) {
   for (let index = 0; selected.length < total; index += 1) {
     selected.push(questions[index % questions.length].id);
   }
-  return selected.slice(0, total);
+  return shuffle(selected.slice(0, total));
+}
+
+function shuffle(values) {
+  const shuffled = [...values];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }
 
 function compareAnswer(expected, candidate, questionType) {
