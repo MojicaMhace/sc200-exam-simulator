@@ -32,6 +32,8 @@ function App() {
   const [result, setResult] = useState<{ total: number; answered: number; unanswered: number; correct: number; scorePercent: number } | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [dark, setDark] = useState(false)
+  const [loadingExam, setLoadingExam] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -43,9 +45,14 @@ function App() {
   }, [])
 
   async function loadQuestions() {
-    const res = await fetch(`${API_BASE_URL}/api/questions`)
-    const data = await res.json()
-    setQuestions(data.questions)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/questions`)
+      if (!res.ok) throw new Error(`Question service returned ${res.status}`)
+      const data = await res.json()
+      setQuestions(data.questions)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to load questions.')
+    }
   }
 
   async function loadSummary() {
@@ -56,26 +63,36 @@ function App() {
   }
 
   async function startExam() {
-    const res = await fetch(`${API_BASE_URL}/api/exam/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'Simulator', totalQuestions: 57 }),
-    })
-    const data = await res.json()
-    setSessionId(data.sessionId)
+    setLoadingExam(true)
+    setErrorMessage(null)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/exam/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'Simulator', totalQuestions: 57 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || `Exam service returned ${res.status}`)
+      setSessionId(data.sessionId)
 
-    const byId = new Map(questions.map((q) => [q.id, q]))
-    const standardItems = data.questionIds
-      .map((id: string, index: number) => ({ instanceId: `question-${index + 1}`, question: byId.get(id), section: 'questions' as const }))
-      .filter((item: { question?: Question }): item is ExamItem => Boolean(item.question))
-    const caseItems = (data.caseQuestionIds || [])
-      .map((id: string) => ({ instanceId: `case-${id}`, question: byId.get(id), section: 'case_studies' as const }))
-      .filter((item: { question?: Question }): item is ExamItem => Boolean(item.question))
-    setExamItems([...standardItems, ...caseItems])
-    setAnswers({})
-    setActiveIndex(0)
-    setResult(null)
-    setScreen('exam')
+      const byId = new Map(questions.map((q) => [q.id, q]))
+      const standardItems = data.questionIds
+        .map((id: string, index: number) => ({ instanceId: `question-${index + 1}`, question: byId.get(id), section: 'questions' as const }))
+        .filter((item: { question?: Question }): item is ExamItem => Boolean(item.question))
+      const caseItems = (data.caseQuestionIds || [])
+        .map((id: string) => ({ instanceId: `case-${id}`, question: byId.get(id), section: 'case_studies' as const }))
+        .filter((item: { question?: Question }): item is ExamItem => Boolean(item.question))
+      if (standardItems.length === 0) throw new Error('No questions were returned by the server.')
+      setExamItems([...standardItems, ...caseItems])
+      setAnswers({})
+      setActiveIndex(0)
+      setResult(null)
+      setScreen('exam')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to start the exam.')
+    } finally {
+      setLoadingExam(false)
+    }
   }
 
   const activeItem = examItems[activeIndex]
@@ -114,12 +131,18 @@ function App() {
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               onClick={startExam}
+              disabled={loadingExam}
               className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-sky-700"
             >
-              <Play size={16} /> Start SC-200 Practice Exam
+              <Play size={16} /> {loadingExam ? 'Loading questions...' : 'Start SC-200 Practice Exam'}
             </button>
           </div>
         </div>
+        {errorMessage && (
+          <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100">
+            Unable to start the exam: {errorMessage}
+          </div>
+        )}
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">

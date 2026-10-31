@@ -3,11 +3,13 @@ const fs = require('fs');
 const { open } = require('sqlite');
 const sqlite3 = require('sqlite3');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'sc200.db');
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const DB_PATH = path.join(DATA_DIR, 'sc200.db');
 const IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_additional_25_question_bank.json');
 const EXTENDED_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_extended_question_bank.json');
 
 async function getDb() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
   return open({
     filename: DB_PATH,
     driver: sqlite3.Database,
