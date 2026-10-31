@@ -170,3 +170,24 @@ const explanations: Record<string, Record<string, string>> = {
 export function getOptionExplanation(questionId: string, optionKey: string): string | undefined {
   return explanations[questionId]?.[optionKey]
 }
+
+const yesNoExplanations: Record<string, Record<number, Record<string, string>>> = {
+  'SC200-DEMO-YESNO-001': {
+    0: {
+      YES: 'Correct. Device isolation restricts network communication while preserving the Defender for Endpoint management channel, so analysts can continue investigating and responding.',
+      NO: 'Not the best answer. Device isolation is specifically designed to restrict a compromised device while keeping its Defender management connection available.',
+    },
+    1: {
+      YES: 'Not the best answer. Attack Surface Reduction rules are configured in Defender for Endpoint, not in Defender for Identity.',
+      NO: 'Correct. Defender for Identity monitors identity signals; it does not configure ASR rules on Windows devices. ASR configuration belongs to Defender for Endpoint.',
+    },
+    2: {
+      YES: 'Correct. Advanced Hunting in Defender XDR uses KQL to query security data and investigate suspicious activity.',
+      NO: 'Not the best answer. Advanced Hunting is intended for querying security data and investigating suspicious activity, so this statement is valid.',
+    },
+  },
+}
+
+export function getYesNoExplanation(questionId: string, statementIndex: number, optionKey: string): string | undefined {
+  return yesNoExplanations[questionId]?.[statementIndex]?.[optionKey]
+}

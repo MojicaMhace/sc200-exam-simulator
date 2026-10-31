@@ -1,7 +1,7 @@
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import type { Question, UserAnswer } from '../types/question'
-import { getOptionExplanation } from '../data/optionExplanations'
+import { getOptionExplanation, getYesNoExplanation } from '../data/optionExplanations'
 
 interface Props {
   question: Question
@@ -106,7 +106,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                       optionKey={value}
                       expected={question.validatedAnswer[index] ? [question.validatedAnswer[index]] : []}
                       questionId={question.id}
-                      explanation={question.options.find((option) => option.key === value)?.explanation}
+                      explanation={getYesNoExplanation(question.id, index, value)}
                     />
                   )}
                 </div>
