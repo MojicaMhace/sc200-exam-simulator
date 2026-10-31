@@ -12,6 +12,10 @@ npm start
 
 For a separate frontend host, set `VITE_API_URL` to the public server URL before building.
 
+The free Render configuration does not use a persistent disk. Questions are recreated from
+the JSON banks when the service starts, but exam history and analytics can reset after a
+service restart or redeploy. Use persistent PostgreSQL or a paid disk when history must be retained.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:
