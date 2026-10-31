@@ -3,6 +3,6 @@ services:
     name: sc200-exam-simulator
     runtime: node
     plan: free
-    buildCommand: npm install --prefix server && npm install --prefix client && npm run build --prefix client
+    buildCommand: npm install --prefix server --build-from-source=sqlite3 && npm install --prefix client && npm run build --prefix client
     startCommand: npm start --prefix server
     healthCheckPath: /api/health
