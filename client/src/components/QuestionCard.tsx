@@ -93,10 +93,11 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                       type="radio"
                       name={`${question.id}-${statement.id}`}
                       checked={selected[index] === value}
+                      disabled={Boolean(selected[index])}
                       onChange={() => {
                         const updated = [...selected]
-                        updated[index] = value
-                        onAnswer(updated)
+                          updated[index] = value
+                          onAnswer(updated)
                       }}
                       aria-label={`${value} for statement ${index + 1}`}
                     />
@@ -134,6 +135,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
               const { active, over } = event
               if (!over || !String(over.id).startsWith('slot-')) return
               const slotIndex = Number(String(over.id).replace('slot-', ''))
+              if (placements[slotIndex]) return
               const updated = [...placements]
               const previousIndex = updated.indexOf(String(active.id))
               if (previousIndex >= 0) updated[previousIndex] = ''
@@ -221,7 +223,12 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                   {caseQuestion.options.map((opt) => (
                     <div key={opt.key}>
                       <button
-                        onClick={() => onAnswer({ ...selectedAnswers, [caseQuestion.id]: opt.key })}
+                        onClick={() => {
+                          if (!selectedAnswers[caseQuestion.id]) {
+                            onAnswer({ ...selectedAnswers, [caseQuestion.id]: opt.key })
+                          }
+                        }}
+                        disabled={Boolean(selectedAnswers[caseQuestion.id])}
                         aria-pressed={selectedAnswers[caseQuestion.id] === opt.key}
                         className={`block w-full rounded-md border px-3 py-2 text-left text-sm dark:bg-slate-900 ${selectedAnswers[caseQuestion.id] === opt.key ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200 dark:bg-sky-950' : 'border-slate-300 bg-white dark:border-slate-700'}`}
                       >
@@ -252,6 +259,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
           <div key={opt.key}>
             <button
               onClick={() => onAnswer(opt.key)}
+              disabled={currentAnswer !== undefined}
               aria-pressed={currentAnswer === opt.key}
               className={`block w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800 ${currentAnswer === opt.key ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200 dark:bg-sky-950' : 'border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900'}`}
             >
