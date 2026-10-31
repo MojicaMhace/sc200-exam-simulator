@@ -1,0 +1,274 @@
+[
+  {
+    "id": "SC200-EXT-001",
+    "sequence": 1001,
+    "title": "Sentinel MCP Server Use",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A threat hunter wants an AI assistant or notebook agent to call approved Sentinel tools, run investigations, and retrieve results without copying data manually.",
+    "question": "What is the best fit for this workflow?",
+    "options": [
+      { "key": "A", "text": "Sentinel MCP Server", "explanation": "The Sentinel MCP Server exposes approved Sentinel capabilities through a tool interface that an MCP-compatible client can call." },
+      { "key": "B", "text": "A workbook visualization", "explanation": "A workbook displays data and metrics, but it does not provide a general programmatic tool interface for an agent." },
+      { "key": "C", "text": "An analytics rule", "explanation": "An analytics rule detects activity on a schedule; it is not an interactive agent tool interface." },
+      { "key": "D", "text": "A watchlist", "explanation": "A watchlist stores reference data for queries, but it does not execute investigations or expose Sentinel tools." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-002",
+    "sequence": 1002,
+    "title": "MCP Authentication and Least Privilege",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You are connecting an MCP client to security tools in a production tenant.",
+    "question": "Which setup is safest?",
+    "options": [
+      { "key": "A", "text": "Use a dedicated identity with least-privilege permissions and review tool access", "explanation": "A dedicated identity limits blast radius and makes access auditable; permissions should match the tools the client actually needs." },
+      { "key": "B", "text": "Use a global administrator token shared by the SOC", "explanation": "A shared global administrator token creates excessive privilege, weak accountability, and a large impact if exposed." },
+      { "key": "C", "text": "Put a client secret directly in a notebook", "explanation": "Notebook files and outputs can be copied or exposed, so secrets must use a protected identity and secret store." },
+      { "key": "D", "text": "Allow every MCP tool by default", "explanation": "Unrestricted tools increase the actions an agent can take and violate least privilege." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-003",
+    "sequence": 1003,
+    "title": "Microsoft Entra ID Connector",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You need Entra sign-in and audit activity available in Microsoft Sentinel.",
+    "question": "What should you do first?",
+    "options": [
+      { "key": "A", "text": "Open Content hub, install the Microsoft Entra ID solution, and configure its data connector", "explanation": "The solution provides the connector and related content; after installation, the connector is configured for the target workspace." },
+      { "key": "B", "text": "Install an agent on every user device", "explanation": "Entra audit and sign-in events are cloud identity data and do not require an endpoint agent on every user device." },
+      { "key": "C", "text": "Create a workbook first", "explanation": "A workbook visualizes data but cannot ingest it; the connector must be configured first." },
+      { "key": "D", "text": "Create a watchlist containing user names", "explanation": "A watchlist is reference data and does not collect Entra activity." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-004",
+    "sequence": 1004,
+    "title": "Azure Activity Connector Scope",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A Sentinel workspace must collect subscription-level Azure Activity logs from several subscriptions.",
+    "question": "What configuration is required?",
+    "options": [
+      { "key": "A", "text": "Enable the Azure Activity connector and select or configure diagnostic settings for each required subscription", "explanation": "Azure Activity collection depends on the connector and the relevant subscription diagnostic configuration, so every required subscription must be covered." },
+      { "key": "B", "text": "Enable only the connector in the workspace and do nothing for subscriptions", "explanation": "A workspace-level connector alone does not guarantee that every subscription sends its activity data." },
+      { "key": "C", "text": "Install AMA on each virtual machine", "explanation": "Azure Activity is subscription control-plane data, not guest operating-system telemetry collected by AMA." },
+      { "key": "D", "text": "Create a scheduled query against an empty table", "explanation": "A query cannot collect data that has not been routed into the workspace." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-005",
+    "sequence": 1005,
+    "title": "Syslog Connector with AMA",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You need Linux firewall Syslog data in Sentinel from a group of Azure virtual machines.",
+    "question": "Which sequence is correct?",
+    "options": [
+      { "key": "A", "text": "Install AMA, create a data collection rule for Syslog facilities and levels, and associate it with the VMs", "explanation": "AMA receives the telemetry, while the DCR defines which Syslog data is collected and which machines use the configuration." },
+      { "key": "B", "text": "Install the legacy Log Analytics agent only and create a workbook", "explanation": "The current collection pattern uses AMA and DCRs; a workbook cannot replace collection configuration." },
+      { "key": "C", "text": "Create a watchlist of firewall messages", "explanation": "A watchlist is static reference data and does not collect live Syslog events." },
+      { "key": "D", "text": "Enable Entra ID sign-in logs", "explanation": "Entra logs are identity events and are unrelated to Linux Syslog collection." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-006",
+    "sequence": 1006,
+    "title": "Connector Troubleshooting",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A connector is marked connected, but no new records appear in the target table.",
+    "question": "What is the most useful first diagnostic step?",
+    "options": [
+      { "key": "A", "text": "Verify source permissions, connector scope, DCR or diagnostic settings, and query recent ingestion", "explanation": "This checks the full path from source authorization through routing and confirms whether data is arriving in the expected table." },
+      { "key": "B", "text": "Delete all existing incidents", "explanation": "Incident deletion does not repair collection and risks losing investigation evidence." },
+      { "key": "C", "text": "Increase the analytics rule frequency", "explanation": "A rule cannot detect records that are not being ingested; frequency is not the first collection diagnostic." },
+      { "key": "D", "text": "Change the dashboard theme", "explanation": "Presentation settings do not affect ingestion." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-007",
+    "sequence": 1007,
+    "title": "Data Collection Rule Filtering",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You need to reduce ingestion cost while retaining authentication failures from Linux servers.",
+    "question": "Where should the collection filter be applied?",
+    "options": [
+      { "key": "A", "text": "In the data collection rule before data is sent to the workspace", "explanation": "Filtering at collection reduces unnecessary ingestion volume while preserving the selected events." },
+      { "key": "B", "text": "Only in a workbook after ingestion", "explanation": "A workbook hides records visually but does not reduce ingestion cost." },
+      { "key": "C", "text": "In the browser cache", "explanation": "Browser state has no effect on Sentinel collection." },
+      { "key": "D", "text": "By deleting incidents after creation", "explanation": "Deleting incidents does not remove the original ingestion cost or reliably control raw data volume." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-008",
+    "sequence": 1008,
+    "title": "KQL Job for Data Lake",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "An analyst needs to scan 18 months of cold security data for a one-time investigation. Interactive response is not required.",
+    "question": "Which approach is appropriate?",
+    "options": [
+      { "key": "A", "text": "Run a KQL job against the Data lake tier", "explanation": "KQL jobs are intended for large-scale or long-running queries over retained data when interactive latency is not required." },
+      { "key": "B", "text": "Move all data back to Analytics permanently", "explanation": "Moving all historical data to the hot tier can increase cost and is unnecessary for a one-time historical hunt." },
+      { "key": "C", "text": "Use a workbook refresh every minute", "explanation": "A workbook is for visualization and frequent refresh does not make a large historical scan efficient." },
+      { "key": "D", "text": "Export the entire workspace to CSV manually", "explanation": "Manual export is slow and lossy compared with running a query against the retained data." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-009",
+    "sequence": 1009,
+    "title": "KQL Job versus Interactive Query",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "An analyst is tuning a detection and needs to test a query repeatedly against the last hour of Analytics-tier data.",
+    "question": "Which choice gives the fastest feedback?",
+    "options": [
+      { "key": "A", "text": "An interactive KQL query in Logs or Advanced Hunting", "explanation": "Interactive queries are optimized for fast iteration over recent hot data while tuning logic." },
+      { "key": "B", "text": "A KQL job over the entire Data lake", "explanation": "A Data lake job is intended for large historical work and adds unnecessary delay for a one-hour tuning loop." },
+      { "key": "C", "text": "A compliance workbook", "explanation": "A workbook presents saved visualizations and is not the primary tool for iterating query syntax." },
+      { "key": "D", "text": "A manual spreadsheet calculation", "explanation": "Manual processing is slower and loses the queryable security schema." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-010",
+    "sequence": 1010,
+    "title": "KQL Job Monitoring",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A long-running historical query was submitted as a KQL job.",
+    "question": "What should the analyst do while it runs?",
+    "options": [
+      { "key": "A", "text": "Track the job status and retrieve its result when it completes", "explanation": "A job is asynchronous, so the analyst monitors its lifecycle and consumes the completed result rather than waiting in an interactive session." },
+      { "key": "B", "text": "Keep resubmitting the query every minute", "explanation": "Repeated submissions create duplicate work and may increase cost without improving the original job." },
+      { "key": "C", "text": "Assume no results means no threats immediately", "explanation": "A running job has not produced a final result yet, so it cannot support that conclusion." },
+      { "key": "D", "text": "Delete the source table", "explanation": "Deleting source data would damage investigations and does not monitor the job." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-011",
+    "sequence": 1011,
+    "title": "Search Job Scope",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "You need to locate a suspicious hash across many tables and workspaces before deciding which table deserves a focused query.",
+    "question": "Which capability is most appropriate for the initial broad search?",
+    "options": [
+      { "key": "A", "text": "A search job", "explanation": "A search job is designed to search broadly across available security data and identify where a value occurs before deeper analysis." },
+      { "key": "B", "text": "A single-table scheduled rule", "explanation": "A single-table rule is narrow and may miss the hash in other relevant tables." },
+      { "key": "C", "text": "A workbook parameter", "explanation": "A parameter filters a visualization; it does not perform broad data discovery across tables and workspaces." },
+      { "key": "D", "text": "A device isolation action", "explanation": "Isolation is containment, not data discovery." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-012",
+    "sequence": 1012,
+    "title": "Search Job Follow-up",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A search job finds a username in several tables. You now need to identify the exact process and device timeline for the incident.",
+    "question": "What is the best next step?",
+    "options": [
+      { "key": "A", "text": "Use the search result to select relevant tables, then run a focused KQL query with time and entity filters", "explanation": "Broad discovery should lead to a precise query that limits time, tables, and entities for efficient investigation." },
+      { "key": "B", "text": "Treat every matching row as a confirmed incident", "explanation": "A match is a lead; it requires context, correlation, and validation before it becomes an incident." },
+      { "key": "C", "text": "Delete tables without matches", "explanation": "Unrelated tables should not be deleted because they may be needed for future investigations or compliance." },
+      { "key": "D", "text": "Disable all connectors", "explanation": "Connector shutdown removes evidence and does not analyze the search results." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-013",
+    "sequence": 1013,
+    "title": "Custom Connector Decision",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A vendor has a REST API but no Microsoft Sentinel content or built-in connector. The SOC needs its alerts in Sentinel.",
+    "question": "What should you evaluate first?",
+    "options": [
+      { "key": "A", "text": "A supported custom connector or API-based ingestion pattern, including authentication, schema, and retry behavior", "explanation": "A custom integration must address how data is authenticated, transformed into a useful schema, delivered, and retried safely." },
+      { "key": "B", "text": "Copy screenshots into incidents", "explanation": "Screenshots are not structured, searchable telemetry and cannot support reliable detections." },
+      { "key": "C", "text": "Create a workbook with no data source", "explanation": "A workbook cannot ingest vendor API data by itself." },
+      { "key": "D", "text": "Use a watchlist for every alert", "explanation": "Watchlists are for relatively stable reference data, not a stream of vendor alerts." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-014",
+    "sequence": 1014,
+    "title": "Connector Permissions",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A connector setup wizard asks for permissions to access a cloud service.",
+    "question": "What principle should guide the permission choice?",
+    "options": [
+      { "key": "A", "text": "Grant only the documented permissions needed for the selected data and actions", "explanation": "Least privilege limits exposure while still allowing the connector to collect its required data." },
+      { "key": "B", "text": "Grant every available API permission to avoid troubleshooting", "explanation": "Excess permissions increase risk and hide configuration problems rather than solving them." },
+      { "key": "C", "text": "Use a personal administrator account permanently", "explanation": "Personal accounts reduce continuity and accountability and are not an appropriate permanent integration identity." },
+      { "key": "D", "text": "Skip consent and ignore connector errors", "explanation": "Without required consent, the connector cannot reliably access the source and errors must be resolved." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-015",
+    "sequence": 1015,
+    "title": "Scheduled Analytics Rule Design",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A scheduled rule runs every 15 minutes and should alert only when at least five failed sign-ins for the same user occur in the previous hour.",
+    "question": "Which design is most important?",
+    "options": [
+      { "key": "A", "text": "Use a one-hour query window, summarize by user, apply the count threshold, and map the user entity", "explanation": "The query window and summarize logic implement the requirement, while entity mapping makes the alert actionable." },
+      { "key": "B", "text": "Query only the last minute and alert on every row", "explanation": "That window misses the one-hour requirement and creates noisy alerts without aggregation." },
+      { "key": "C", "text": "Use a workbook refresh instead of an analytics rule", "explanation": "A workbook reports data but does not create incidents from a detection condition." },
+      { "key": "D", "text": "Disable entity mapping to reduce alert detail", "explanation": "Removing entity mapping makes triage and investigation harder and does not implement the threshold." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-EXT-016",
+    "sequence": 1016,
+    "title": "Connector Data Validation",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "After configuring a connector, you need to prove that data is arriving before enabling an alert rule.",
+    "question": "What is the best validation method?",
+    "options": [
+      { "key": "A", "text": "Run a time-bounded KQL query against the expected table and inspect recent records and key fields", "explanation": "A targeted query verifies both ingestion and the schema fields that downstream detections will use." },
+      { "key": "B", "text": "Check only that the connector page says Connected", "explanation": "A connected status does not prove that records are arriving or that the expected fields are populated." },
+      { "key": "C", "text": "Enable the production rule and wait for an incident", "explanation": "This risks missing data and makes troubleshooting harder; validate ingestion before depending on detection." },
+      { "key": "D", "text": "Export the portal page as an image", "explanation": "A screenshot does not validate the data path or record contents." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  }
+]
