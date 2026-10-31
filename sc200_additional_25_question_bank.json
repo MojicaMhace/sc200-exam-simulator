@@ -1,0 +1,477 @@
+[
+  {
+    "id": "SC200-NEW-001",
+    "sequence": 1,
+    "title": "Automatic Attack Disruption",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Your SOC wants Microsoft Defender XDR to automatically contain a fast-moving ransomware attack, such as disabling a compromised account or isolating an affected device, when high-confidence signals are detected without waiting for analyst approval.",
+    "question": "What should you configure?",
+    "options": [
+      { "key": "A", "text": "A Sentinel automation rule triggered on incident creation" },
+      { "key": "B", "text": "Automatic attack disruption in Microsoft Defender XDR" },
+      { "key": "C", "text": "A scheduled analytics rule with a short query interval" },
+      { "key": "D", "text": "Just-in-time device isolation requests" }
+    ],
+    "originalAnswer": "B",
+    "validatedAnswer": ["B"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-002",
+    "sequence": 2,
+    "title": "Attack Surface Reduction (ASR) Rules",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You want to block Office applications from creating child processes commonly used to launch malware while preserving legitimate macro-driven workflows for finance.",
+    "question": "What should you configure in Defender for Endpoint?",
+    "options": [
+      { "key": "A", "text": "A custom detection rule in Advanced Hunting" },
+      { "key": "B", "text": "An attack surface reduction (ASR) rule in audit mode first, then enforced with exclusions for the finance team's known-good process" },
+      { "key": "C", "text": "A device compliance policy in Intune" },
+      { "key": "D", "text": "A Sentinel playbook that kills the process after detection" }
+    ],
+    "originalAnswer": "B",
+    "validatedAnswer": ["B"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-003",
+    "sequence": 3,
+    "title": "Data Connectors",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You need to ingest security events from Microsoft Entra ID sign-in logs, Azure Activity logs, and Microsoft 365 audit logs into Microsoft Sentinel.",
+    "question": "What is the correct way to connect these data sources?",
+    "options": [
+      { "key": "A", "text": "Enable the Microsoft Entra ID, Azure Activity, and Microsoft 365 data connectors in Microsoft Sentinel" },
+      { "key": "B", "text": "Install the Azure Monitor Agent on each Azure service" },
+      { "key": "C", "text": "Configure Azure Diagnostics to send logs to a storage account, then connect to Sentinel" },
+      { "key": "D", "text": "Use Azure Event Hub to stream all logs to Sentinel" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-004",
+    "sequence": 4,
+    "title": "Sentinel Analytics Rules",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You want to create a detection rule in Microsoft Sentinel that fires an alert when a user signs in from two different countries within 30 minutes.",
+    "question": "Which type of analytics rule should you create?",
+    "options": [
+      { "key": "A", "text": "Microsoft incident creation rule" },
+      { "key": "B", "text": "Scheduled query rule using KQL with entity mapping" },
+      { "key": "C", "text": "Fusion rule" },
+      { "key": "D", "text": "Machine learning behavioral analytics rule" }
+    ],
+    "originalAnswer": "B",
+    "validatedAnswer": ["B"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-005",
+    "sequence": 5,
+    "title": "Sentinel Watchlists",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Your threat intelligence team has a CSV of 500 malicious IPs and you want to reference it in analytics rules.",
+    "question": "What is the best way to operationalize this list?",
+    "options": [
+      { "key": "A", "text": "Create 500 individual analytics rules, one per IP" },
+      { "key": "B", "text": "Upload the CSV to Azure Blob Storage and query it directly from KQL" },
+      { "key": "C", "text": "Create a custom log table by uploading the CSV via ingestion API" },
+      { "key": "D", "text": "Import the CSV as a Sentinel Watchlist and reference it in analytics rules using the _GetWatchlist() function" }
+    ],
+    "originalAnswer": "D",
+    "validatedAnswer": ["D"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-006",
+    "sequence": 6,
+    "title": "Sentinel Playbooks (SOAR)",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "When a high-severity incident is created in Sentinel, you want to post to Teams and open a ServiceNow ticket automatically.",
+    "question": "What should you create to automate this response?",
+    "options": [
+      { "key": "A", "text": "A Sentinel automation rule that triggers a Logic App (playbook) on incident creation" },
+      { "key": "B", "text": "A Sentinel analytics rule with alert grouping enabled" },
+      { "key": "C", "text": "A Defender XDR automated investigation" },
+      { "key": "D", "text": "An Azure Function triggered by Azure Monitor alerts" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-007",
+    "sequence": 7,
+    "title": "Sentinel Workbooks",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Your CISO needs visual trends for incidents, top alert sources, and MTTC with auto refresh.",
+    "question": "What Sentinel feature should you use?",
+    "options": [
+      { "key": "A", "text": "Analytics rule run history" },
+      { "key": "B", "text": "Microsoft Sentinel Workbooks" },
+      { "key": "C", "text": "Azure Monitor dashboards" },
+      { "key": "D", "text": "Defender XDR reports" }
+    ],
+    "originalAnswer": "B",
+    "validatedAnswer": ["B"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-008",
+    "sequence": 8,
+    "title": "Threat Intelligence Ingestion",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You subscribe to a TAXII feed for malicious IP indicators and want auto alerting when they match logs.",
+    "question": "What must you configure in Microsoft Sentinel?",
+    "options": [
+      { "key": "A", "text": "A custom log table for threat intelligence, plus a playbook to match IPs" },
+      { "key": "B", "text": "A Defender for Endpoint custom indicator import" },
+      { "key": "C", "text": "A Sentinel watchlist populated manually from the TAXII feed" },
+      { "key": "D", "text": "A Threat Intelligence TAXII data connector, then an analytics rule using the ThreatIntelligenceIndicator table" }
+    ],
+    "originalAnswer": "D",
+    "validatedAnswer": ["D"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-009",
+    "sequence": 9,
+    "title": "Sentinel Anomalies",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Your organization wants behavioral baselining and anomaly scoring for unusual user actions.",
+    "question": "Which Sentinel capability provides this?",
+    "options": [
+      { "key": "A", "text": "Sentinel anomalies, built on entity behavior analytics" },
+      { "key": "B", "text": "Scheduled analytics rules with static thresholds" },
+      { "key": "C", "text": "Defender for Identity alerts alone" },
+      { "key": "D", "text": "Entra ID Identity Protection sign-in risk alone" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-010",
+    "sequence": 10,
+    "title": "Sentinel Data Retention Tiers",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Workspace ingests 200 GB/day. Analysts need fast access to 90 days, with 2 years required for compliance and cost optimization.",
+    "question": "Which retention approach fits?",
+    "options": [
+      { "key": "A", "text": "Put all 2 years in the Analytics tier" },
+      { "key": "B", "text": "Keep 90 days in Analytics tier and move older data to Data lake tier, querying with KQL jobs as needed" },
+      { "key": "C", "text": "Delete all data after 90 days" },
+      { "key": "D", "text": "Put everything in XDR tier" }
+    ],
+    "originalAnswer": "B",
+    "validatedAnswer": ["B"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-011",
+    "sequence": 11,
+    "title": "SOC Optimization Recommendations",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Your Sentinel workspace may have unused ingested data sources and ATT&CK coverage gaps.",
+    "question": "What built-in capability surfaces this guidance?",
+    "options": [
+      { "key": "A", "text": "SOC optimization recommendations" },
+      { "key": "B", "text": "The investigation graph" },
+      { "key": "C", "text": "Sentinel Workbooks gallery" },
+      { "key": "D", "text": "MITRE ATT&CK matrix viewed manually" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-012",
+    "sequence": 12,
+    "title": "Defender XDR Alert Triage",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "An analyst gets a medium-severity Defender XDR alert for suspicious Office-launched process and needs to verify true positive before escalation.",
+    "question": "What is the FIRST action?",
+    "options": [
+      { "key": "A", "text": "Examine the alert process tree and timeline in the Defender XDR incident page" },
+      { "key": "B", "text": "Immediately isolate the device" },
+      { "key": "C", "text": "Block the user account in Entra ID" },
+      { "key": "D", "text": "Run a full antivirus scan" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-013",
+    "sequence": 13,
+    "title": "Investigating Complex Multi-Domain Attacks",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "SOC receives 47 alerts across Defender products, all tied to one attack chain spanning email, endpoint, and identity.",
+    "question": "How should this be investigated and tracked?",
+    "options": [
+      { "key": "A", "text": "As a single complex, multi-stage, multi-domain attack correlated into one Defender XDR incident and tracked through case management" },
+      { "key": "B", "text": "As 47 unrelated alerts" },
+      { "key": "C", "text": "Export all to spreadsheet for manual correlation" },
+      { "key": "D", "text": "Wait for Sentinel Fusion to merge them" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-014",
+    "sequence": 14,
+    "title": "Defender for Endpoint Live Response",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "During an active incident, you must collect memory dump and run custom investigation script on a compromised Windows device remotely.",
+    "question": "Which feature allows this?",
+    "options": [
+      { "key": "A", "text": "Device isolation" },
+      { "key": "B", "text": "Automated investigation and remediation" },
+      { "key": "C", "text": "Live response session" },
+      { "key": "D", "text": "Advanced hunting query" }
+    ],
+    "originalAnswer": "C",
+    "validatedAnswer": ["C"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-015",
+    "sequence": 15,
+    "title": "Defender for Identity — Lateral Movement",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "Defender for Identity raises suspected pass-the-hash with NTLM authentications to multiple servers within 10 minutes.",
+    "question": "What does this indicate and what should be investigated first?",
+    "options": [
+      { "key": "A", "text": "Normal behavior" },
+      { "key": "B", "text": "VPN issue" },
+      { "key": "C", "text": "Conditional Access failure" },
+      { "key": "D", "text": "Possible pass-the-hash, investigate source machine for credential dumping tools" }
+    ],
+    "originalAnswer": "D",
+    "validatedAnswer": ["D"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-016",
+    "sequence": 16,
+    "title": "Defender for Cloud Apps — Shadow IT",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "Security team wants to identify unsanctioned cloud apps in use and assess app risk based on compliance and controls.",
+    "question": "Which feature should be used?",
+    "options": [
+      { "key": "A", "text": "Conditional Access App Control" },
+      { "key": "B", "text": "App governance policies" },
+      { "key": "C", "text": "Cloud Discovery (Shadow IT discovery)" },
+      { "key": "D", "text": "Information protection policies" }
+    ],
+    "originalAnswer": "C",
+    "validatedAnswer": ["C"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-017",
+    "sequence": 17,
+    "title": "Automated Investigation and Remediation — Approval",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "Automated investigation recommends remediating a malicious file on 12 devices and awaits analyst approval.",
+    "question": "Where should approval or rejection be performed?",
+    "options": [
+      { "key": "A", "text": "Defender XDR Settings — Endpoints" },
+      { "key": "B", "text": "Intune — Device compliance" },
+      { "key": "C", "text": "Sentinel Playbooks" },
+      { "key": "D", "text": "Defender XDR Action Center — Pending actions" }
+    ],
+    "originalAnswer": "D",
+    "validatedAnswer": ["D"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-018",
+    "sequence": 18,
+    "title": "Agentic AI Investigation with Security Copilot",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A Tier 1 analyst wants a rapid summary and suggested next step for a complex incident timeline without reading every alert manually.",
+    "question": "What capability should be used?",
+    "options": [
+      { "key": "A", "text": "Manual spreadsheet export" },
+      { "key": "B", "text": "Agentic AI investigation via embedded Microsoft Security Copilot inside the Defender XDR incident page" },
+      { "key": "C", "text": "Wait for Sentinel Fusion to summarize" },
+      { "key": "D", "text": "Immediate escalation to Tier 3" }
+    ],
+    "originalAnswer": "B",
+    "validatedAnswer": ["B"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-019",
+    "sequence": 19,
+    "title": "Defender for Cloud Workload Protection Alerts",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "Defender for Cloud detects possible brute force against Azure SQL with 500 failures then success from unusual IP and database has customer PII.",
+    "question": "What is the recommended immediate response?",
+    "options": [
+      { "key": "A", "text": "Dismiss if IP country is known" },
+      { "key": "B", "text": "Act only if Critical severity" },
+      { "key": "C", "text": "Investigate successful login and accessed data, consider revoking SQL credentials and notifying privacy team" },
+      { "key": "D", "text": "Enable future auditing and take no action now" }
+    ],
+    "originalAnswer": "C",
+    "validatedAnswer": ["C"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-020",
+    "sequence": 20,
+    "title": "Investigating Microsoft 365 Activity",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "You must determine which files a departing employee accessed through Microsoft Graph API in their last two weeks beyond incident timeline data.",
+    "question": "Where should you look?",
+    "options": [
+      { "key": "A", "text": "Microsoft Graph activity logs investigated via Microsoft Purview" },
+      { "key": "B", "text": "Defender for Endpoint device timeline only" },
+      { "key": "C", "text": "Sentinel Workbooks" },
+      { "key": "D", "text": "Defender XDR Action Center" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-021",
+    "sequence": 21,
+    "title": "Advanced Hunting — KQL",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "Find all devices where mimikatz.exe executed in the last 7 days using Advanced Hunting.",
+    "question": "Which KQL query is correct?",
+    "options": [
+      { "key": "A", "text": "DeviceProcessEvents | filter FileName = \"mimikatz.exe\" AND time > 7d" },
+      { "key": "B", "text": "DeviceProcessEvents | where FileName == \"mimikatz.exe\" | where Timestamp > ago(7d)" },
+      { "key": "C", "text": "SELECT * FROM DeviceProcessEvents WHERE FileName = 'mimikatz.exe' AND date > NOW()-7" },
+      { "key": "D", "text": "DeviceProcessEvents | where ProcessName contains \"mimikatz\" | limit 100" }
+    ],
+    "originalAnswer": "B",
+    "validatedAnswer": ["B"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-022",
+    "sequence": 22,
+    "title": "Sentinel Hunting Queries",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "Build a hunting query that shows failed sign-in events in last 24 hours where failure reason is Invalid password, newest first.",
+    "question": "Which KQL query is correct?",
+    "options": [
+      { "key": "A", "text": "SigninLogs | filter ResultType = \"failed\" | filter time > 24h | sort by time" },
+      { "key": "B", "text": "SELECT * FROM SigninLogs WHERE ResultType != 0 AND time > NOW()-24h ORDER BY time DESC" },
+      { "key": "C", "text": "SigninLogs | where ResultType != 0 | where ResultDescription == \"Invalid password\" | where TimeGenerated > ago(24h) | order by TimeGenerated desc" },
+      { "key": "D", "text": "SigninLogs | where Status == \"Failure\" | where Reason == \"InvalidPassword\" | top 100" }
+    ],
+    "originalAnswer": "C",
+    "validatedAnswer": ["C"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-023",
+    "sequence": 23,
+    "title": "Hunting Graphs, Blast Radius, and Sentinel Graph",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "An incident includes failed SSH attempts, successful login, then crypto miner execution. You need visual entity relationships and spread estimate.",
+    "question": "Which capability combination gives this view?",
+    "options": [
+      { "key": "A", "text": "A hunting graph with blast radius, cross-referenced with Sentinel Graph for entity relationships" },
+      { "key": "B", "text": "Sentinel Workbooks gallery" },
+      { "key": "C", "text": "Defender for Cloud regulatory compliance report" },
+      { "key": "D", "text": "A single scheduled analytics rule with no entity mapping" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-024",
+    "sequence": 24,
+    "title": "KQL Jobs Against the Data Lake Tier",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "You need a large historical hunt over 18 months where most data is in Data lake tier and near-real-time interactivity is not required.",
+    "question": "What should you use?",
+    "options": [
+      { "key": "A", "text": "A KQL job against Data lake tier for large-scale long-retention queries" },
+      { "key": "B", "text": "A standard interactive query against Analytics tier regardless of cost" },
+      { "key": "C", "text": "A Sentinel Workbook" },
+      { "key": "D", "text": "Manual export to spreadsheet first" }
+    ],
+    "originalAnswer": "A",
+    "validatedAnswer": ["A"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  },
+  {
+    "id": "SC200-NEW-025",
+    "sequence": 25,
+    "title": "Notebook Hunting via the Sentinel MCP Server",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A hunter wants repeatable, code-based hunting workflows from notebooks with programmatic Sentinel data/tool access.",
+    "question": "What supports this workflow?",
+    "options": [
+      { "key": "A", "text": "Defender XDR Action Center" },
+      { "key": "B", "text": "A Sentinel scheduled analytics rule" },
+      { "key": "C", "text": "Connecting a notebook to Sentinel via the Sentinel MCP Server" },
+      { "key": "D", "text": "Manual copy-paste of KQL results" }
+    ],
+    "originalAnswer": "C",
+    "validatedAnswer": ["C"],
+    "validationStatus": "Needs Review",
+    "sourceReviewDate": "2026-10-28"
+  }
+]
