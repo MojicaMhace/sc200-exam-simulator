@@ -34,6 +34,8 @@ async function main() {
     duplicateScenarioTexts: countDuplicateScenarioTexts(playable),
     difficulty: groupBy(playable, 'difficulty'),
     domains: groupBy(playable, 'domain'),
+    importedDumpArchive: rows.filter((row) => row.source_type === 'Imported dump').length,
+    importedDumpPlayable: playable.filter((row) => row.source_type === 'Imported dump').length,
   };
   const attempts = await db.get('SELECT COUNT(DISTINCT question_id) AS recentlyAttempted FROM exam_answers WHERE id > COALESCE((SELECT MAX(id) - 200 FROM exam_answers), 0)');
   result.recentlyAttempted = attempts.recentlyAttempted;

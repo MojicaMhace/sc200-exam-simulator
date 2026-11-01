@@ -352,6 +352,8 @@ async function buildDiagnostics(db) {
     WHERE active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'
     GROUP BY difficulty, source_type
   `);
+  const importedDumpArchive = await db.get("SELECT COUNT(*) AS count FROM questions WHERE source_type = 'Imported dump'");
+  const importedDumpPlayable = await db.get("SELECT COUNT(*) AS count FROM questions WHERE source_type = 'Imported dump' AND active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'");
   return {
     apiVersion: '2026-11-01-balanced-selection',
     buildCommit: BUILD_COMMIT,
@@ -359,6 +361,8 @@ async function buildDiagnostics(db) {
     difficulty,
     domains,
     pools,
+    importedDumpArchive: importedDumpArchive.count,
+    importedDumpPlayable: importedDumpPlayable.count,
     rbac: { count: rbac.count, difficulty: rbacDifficulty },
   };
 }

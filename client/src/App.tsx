@@ -44,7 +44,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [practiceMode, setPracticeMode] = useState<PracticeMode>('exam')
   const [difficulty, setDifficulty] = useState<Difficulty>('all')
-  const [diagnostics, setDiagnostics] = useState<{ apiVersion: string; database: { playable: number; imported: number; authored: number; uniqueScenarioFamilies: number } } | null>(null)
+  const [diagnostics, setDiagnostics] = useState<{ apiVersion: string; importedDumpArchive?: number; importedDumpPlayable?: number; database: { playable: number; imported: number; authored: number; uniqueScenarioFamilies: number } } | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -244,7 +244,7 @@ function App() {
           <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="mb-2 text-base font-semibold">Imported Questions</h2>
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Loaded: {diagnostics?.database.imported ?? questions.filter((question) => question.sourceType === 'Imported').length} imported dump questions and {diagnostics?.database.authored ?? questions.filter((question) => question.sourceType !== 'Imported').length} newly authored questions. Imported dump questions are marked on every question card.
+              Playable: {diagnostics?.database.imported ?? questions.filter((question) => question.sourceType === 'Imported').length} imported dump questions and {diagnostics?.database.authored ?? questions.filter((question) => question.sourceType !== 'Imported').length} newly authored questions. The attached dump archive contains {diagnostics?.importedDumpArchive ?? 0} records, but {diagnostics?.importedDumpPlayable ?? 0} are playable because the supplied Markdown omits original answer choices for validation.
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">

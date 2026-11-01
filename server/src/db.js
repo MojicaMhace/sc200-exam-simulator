@@ -10,6 +10,7 @@ const EXTENDED_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_extended_qu
 const SKILL_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_skill_question_bank.json');
 const RBAC_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_rbac_question_bank.json');
 const EXPERT_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_expert_question_bank.json');
+const DUMP_MARKDOWN_PATH = path.join(__dirname, '..', '..', 'sc200_30_question_bank.md');
 
 async function getDb() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -116,6 +117,7 @@ async function seedQuestionsIfEmpty(db) {
     await importQuestionFile(db, SKILL_IMPORT_PATH);
     await importQuestionFile(db, RBAC_IMPORT_PATH);
     await importQuestionFile(db, EXPERT_IMPORT_PATH);
+    await importDumpMarkdown(db);
     return;
   }
 
@@ -130,6 +132,7 @@ async function seedQuestionsIfEmpty(db) {
   await importQuestionFile(db, SKILL_IMPORT_PATH);
   await importQuestionFile(db, RBAC_IMPORT_PATH);
   await importQuestionFile(db, EXPERT_IMPORT_PATH);
+  await importDumpMarkdown(db);
 }
 
 async function insertQuestions(db, questions) {
@@ -174,7 +177,7 @@ async function insertQuestions(db, questions) {
       JSON.stringify(q.validatedAnswer || []),
       q.validationStatus || 'Needs Review',
       q.sourceReviewDate || null,
-      q.sourceType || (q.id.startsWith('SC200-SKILL-') || q.id.startsWith('SC200-EXT-') ? 'Original generated' : 'Imported'),
+      q.sourceType || (q.id.startsWith('SC200-SKILL-') || q.id.startsWith('SC200-EXT-') || q.id.startsWith('SC200-NEW-') ? 'Original authored' : 'Imported'),
       q.subtopic || inferSubtopic(q),
       q.difficulty || inferDifficulty(q),
       JSON.stringify(q.learnReferences || []),
@@ -192,6 +195,32 @@ async function importQuestionFile(db, filePath) {
   await insertQuestions(db, questions);
 }
 
+async function importDumpMarkdown(db) {
+  if (!fs.existsSync(DUMP_MARKDOWN_PATH)) return;
+  const markdown = fs.readFileSync(DUMP_MARKDOWN_PATH, 'utf8');
+  const records = [...markdown.matchAll(/## SC200-(\d{3}) — ([^\n]+)\n\n\*\*Question:\*\* ([\s\S]*?)\n\n\*\*Answer:\*\* ([\s\S]*?)\n\n\*\*Status:\*\* `([^`]+)`\n\n\*\*Explanation \/ caveat:\*\* ([\s\S]*?)\n\n\*\*Microsoft Learn:\*\* ([^\n]+)/g)]
+    .map((match, index) => ({
+      id: `SC200-DUMP-${match[1]}`,
+      sequence: 13000 + index,
+      title: match[2].trim(),
+      domain: inferDumpDomain(match[3]),
+      questionType: 'single_choice',
+      scenario: `Imported dump reconstruction. ${match[3].trim()}`,
+      question: match[3].trim(),
+      options: [],
+      originalAnswer: match[4].trim(),
+      validatedAnswer: [],
+      validationStatus: `Not playable — ${match[5].trim()}; original choices are incomplete in the supplied dump`,
+      sourceType: 'Imported dump',
+      subtopic: 'Imported SC-200 dump',
+      difficulty: 'intermediate',
+      learnReferences: match[7].trim() === 'Not recorded' ? [] : [match[7].trim()],
+      scenarioFamily: `Imported dump ${match[1]}`,
+      active: true,
+    }));
+  await insertQuestions(db, records);
+}
+
 async function backfillQuestionMetadata(db) {
   const rows = await db.all('SELECT id, title, scenario, question, subtopic, difficulty, scenario_family FROM questions');
   for (const row of rows) {
@@ -203,12 +232,20 @@ async function backfillQuestionMetadata(db) {
     if (!row.difficulty || row.difficulty === 'intermediate' && inferredDifficulty === 'advanced') {
       await db.run('UPDATE questions SET difficulty = ? WHERE id = ?', [inferredDifficulty, row.id]);
     }
-    if (row.id.startsWith('SC200-DEMO-') || row.id.startsWith('SC200-EXT-') || row.id.startsWith('SC200-SKILL-')) {
+    if (row.id.startsWith('SC200-DEMO-') || row.id.startsWith('SC200-EXT-') || row.id.startsWith('SC200-SKILL-') || row.id.startsWith('SC200-NEW-')) {
       await db.run("UPDATE questions SET source_type = 'Original authored' WHERE id = ?", [row.id]);
       await db.run("UPDATE questions SET difficulty = 'advanced' WHERE id = ?", [row.id]);
     }
+
     await db.run('UPDATE questions SET scenario_family = ? WHERE id = ? AND scenario_family = ?', [inferScenarioFamily(row), row.id, 'General']);
   }
+}
+
+function inferDumpDomain(text) {
+  const value = String(text).toLowerCase();
+  if (value.includes('kql') || value.includes('hunt') || value.includes('join')) return 'Perform threat hunting';
+  if (value.includes('incident') || value.includes('remediation') || value.includes('compromised')) return 'Respond to security incidents';
+  return 'Manage a security operations environment';
 }
 
 function inferSubtopic(question) {

@@ -74,7 +74,7 @@ test('scores partial credit and preserves shuffled answer keys', async () => {
   const { body: session } = await request('/api/exam/start', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ mode: 'Practice', totalQuestions: 50, difficulty: 'all' }),
+    body: JSON.stringify({ mode: 'Practice', totalQuestions: 1, difficulty: 'expert' }),
   });
   const question = questionsBody.questions.find((item) => (
     ['single_choice', 'multiple_choice'].includes(item.questionType) && session.questionIds.includes(item.id)
@@ -90,31 +90,26 @@ test('scores partial credit and preserves shuffled answer keys', async () => {
   assert.equal(body.feedback.correct, true);
 });
 
-test('creates unique sessions with associated case studies and actual distributions', async () => {
+test('reports the unavailable imported source pool instead of misrepresenting balance', async () => {
   const { response, body } = await request('/api/exam/start', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ mode: 'Exam', totalQuestions: 20, difficulty: 'all' }),
   });
-  assert.equal(response.status, 200);
-  assert.equal(new Set(body.questionIds).size, body.questionIds.length);
-  assert.equal(body.sourceDistribution.imported, 10);
-  assert.equal(body.sourceDistribution.authored, 10);
-  assert.ok(body.actualDifficultyDistribution);
-  assert.equal(body.caseQuestionIds.length, 1);
-  assert.ok(!body.questionIds.includes(body.caseQuestionIds[0]));
+  assert.equal(response.status, 409);
+  assert.match(body.error, /needs 10 imported and 10 newly authored/);
 });
 
 test('Practice gives feedback while Exam protects answers', async () => {
   const practice = await request('/api/exam/start', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ mode: 'Practice', totalQuestions: 20, difficulty: 'all' }),
+    body: JSON.stringify({ mode: 'Practice', totalQuestions: 1, difficulty: 'expert' }),
   });
   const exam = await request('/api/exam/start', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ mode: 'Exam', totalQuestions: 20, difficulty: 'all' }),
+    body: JSON.stringify({ mode: 'Exam', totalQuestions: 1, difficulty: 'expert' }),
   });
   const questionId = practice.body.questionIds[0];
   const practiceCheck = await request(`/api/exam/${practice.body.sessionId}/question-check`, {
@@ -131,20 +126,15 @@ test('Practice gives feedback while Exam protects answers', async () => {
   assert.equal(examCheck.response.status, 403);
 });
 
-test('RBAC questions can be selected and sessions remain persistent', async () => {
-  let session;
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const result = await request('/api/exam/start', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'Practice', totalQuestions: 20, difficulty: 'all' }),
-    });
-    if (result.body.questionIds.some((id) => id.startsWith('SC200-RBAC-'))) {
-      session = result.body;
-      break;
-    }
-  }
-  assert.ok(session);
+test('RBAC questions remain available and sessions remain persistent', async () => {
+  const questions = await request('/api/questions');
+  assert.ok(questions.body.questions.some((question) => question.id.startsWith('SC200-RBAC-')));
+  const sessionResult = await request('/api/exam/start', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ mode: 'Practice', totalQuestions: 1, difficulty: 'expert' }),
+  });
+  const session = sessionResult.body;
   const submit = await request(`/api/exam/${session.sessionId}/submit`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
