@@ -150,3 +150,27 @@ test('RBAC questions remain available and sessions remain persistent', async () 
   });
   assert.equal(repeatSubmit.response.status, 200);
 });
+
+test('playable feedback contains substantive explanations without placeholders', async () => {
+  const diagnostics = await request('/api/diagnostics');
+  assert.equal(diagnostics.body.explanationAudit.genericOptionExplanations, 0);
+  assert.equal(diagnostics.body.explanationAudit.playable, diagnostics.body.database.playable);
+
+  const questions = await request('/api/questions?includeAnswers=true');
+  const question = questions.body.questions.find((item) => item.questionType === 'single_choice');
+  const session = await request('/api/exam/start', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ mode: 'Practice', totalQuestions: 1, difficulty: 'expert' }),
+  });
+  const feedback = await request(`/api/exam/${session.body.sessionId}/question-check`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ questionId: session.body.questionIds[0], answer: 'A' }),
+  });
+  assert.equal(feedback.response.status, 200);
+  assert.ok(feedback.body.feedback.correctAnswerExplanation.length > 40);
+  assert.ok(feedback.body.feedback.technicalConcept);
+  assert.ok(feedback.body.feedback.decisiveClue);
+  assert.equal(Object.keys(feedback.body.feedback.optionFeedback).length, 4);
+});

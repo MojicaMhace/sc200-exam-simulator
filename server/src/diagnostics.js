@@ -22,8 +22,16 @@ async function main() {
     filename: path.join(__dirname, '..', 'data', 'sc200.db'),
     driver: sqlite3.Database,
   });
-  const rows = await db.all('SELECT id, domain, scenario, source_type, difficulty, active, validated_answer_json, scenario_family FROM questions');
+  const rows = await db.all('SELECT id, domain, scenario, source_type, difficulty, active, validated_answer_json, scenario_family, options_json FROM questions');
   const playable = rows.filter((row) => row.active === 1 && row.validated_answer_json && row.validated_answer_json !== '[]');
+  const genericPhrases = ['matches the supplied answer concept', 'plausible alternative', 'not the best choice', 'does not satisfy the stated requirement'];
+  const explanationAudit = playable.reduce((result, row) => {
+    const options = JSON.parse(row.options_json || '[]');
+    const generic = options.filter((option) => genericPhrases.some((phrase) => String(option.explanation || '').toLowerCase().includes(phrase))).length;
+    result.playable += 1;
+    result.genericOptionExplanations += generic;
+    return result;
+  }, { playable: 0, genericOptionExplanations: 0 });
   const result = {
     jsonCounts,
     sqliteRecords: rows.length,
@@ -38,6 +46,7 @@ async function main() {
     importedDumpArchive: rows.filter((row) => row.source_type === 'Imported dump').length,
     importedDumpPlayable: playable.filter((row) => row.source_type === 'Imported dump').length,
     reconstructedDumpPlayable: playable.filter((row) => row.source_type === 'Reconstructed from supplied dump').length,
+    explanationAudit,
   };
   const attempts = await db.get('SELECT COUNT(DISTINCT question_id) AS recentlyAttempted FROM exam_answers WHERE id > COALESCE((SELECT MAX(id) - 200 FROM exam_answers), 0)');
   result.recentlyAttempted = attempts.recentlyAttempted;

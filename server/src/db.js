@@ -43,7 +43,11 @@ async function initDb() {
       difficulty TEXT NOT NULL DEFAULT 'intermediate',
       learn_references_json TEXT NOT NULL DEFAULT '[]',
       scenario_family TEXT NOT NULL DEFAULT 'General',
-      active INTEGER NOT NULL DEFAULT 1
+      active INTEGER NOT NULL DEFAULT 1,
+      correct_answer_explanation TEXT,
+      decisive_clue TEXT,
+      technical_concept TEXT,
+      practical_example TEXT
     );
 
     CREATE TABLE IF NOT EXISTS exam_sessions (
@@ -85,6 +89,10 @@ async function initDb() {
     "ALTER TABLE questions ADD COLUMN learn_references_json TEXT NOT NULL DEFAULT '[]'",
     "ALTER TABLE questions ADD COLUMN scenario_family TEXT NOT NULL DEFAULT 'General'",
     "ALTER TABLE questions ADD COLUMN active INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE questions ADD COLUMN correct_answer_explanation TEXT",
+    "ALTER TABLE questions ADD COLUMN decisive_clue TEXT",
+    "ALTER TABLE questions ADD COLUMN technical_concept TEXT",
+    "ALTER TABLE questions ADD COLUMN practical_example TEXT",
     "ALTER TABLE exam_sessions ADD COLUMN selection_seed TEXT",
     "ALTER TABLE exam_sessions ADD COLUMN requested_difficulty TEXT NOT NULL DEFAULT 'all'",
   ]) {
@@ -143,8 +151,9 @@ async function insertQuestions(db, questions) {
     INSERT INTO questions (
       id, sequence, title, domain, question_type, scenario, question,
       options_json, original_answer, validated_answer_json, validation_status, source_review_date,
-      source_type, subtopic, difficulty, learn_references_json, scenario_family, active, interaction_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      source_type, subtopic, difficulty, learn_references_json, scenario_family, active, interaction_json,
+      correct_answer_explanation, decisive_clue, technical_concept, practical_example
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       sequence = excluded.sequence,
       title = excluded.title,
@@ -163,7 +172,11 @@ async function insertQuestions(db, questions) {
       learn_references_json = excluded.learn_references_json,
       scenario_family = excluded.scenario_family,
       active = excluded.active,
-      interaction_json = excluded.interaction_json
+      interaction_json = excluded.interaction_json,
+      correct_answer_explanation = excluded.correct_answer_explanation,
+      decisive_clue = excluded.decisive_clue,
+      technical_concept = excluded.technical_concept,
+      practical_example = excluded.practical_example
   `;
 
   for (const q of questions) {
@@ -187,7 +200,28 @@ async function insertQuestions(db, questions) {
       q.scenarioFamily || inferScenarioFamily(q),
       q.active === false ? 0 : 1,
       JSON.stringify(q.interaction || null),
+      q.correctAnswerExplanation || buildCorrectAnswerExplanation(q),
+      q.decisiveClue || buildDecisiveClue(q),
+      q.technicalConcept || q.subtopic || 'Microsoft security operations',
+      q.practicalExample || buildPracticalExample(q),
     ]);
+  }
+
+  function buildCorrectAnswerExplanation(question) {
+    const answer = (question.validatedAnswer || []).join(', ');
+    const option = (question.options || []).find((item) => item.key === answer);
+    return `Answer ${answer} is correct because ${option?.text || 'it satisfies the stated requirement'}; the scenario requires this outcome rather than a related but different control.`;
+  }
+
+  function buildDecisiveClue(question) {
+    const scenario = String(question.scenario || '').trim();
+    return scenario.split(/[.!?]/)[0] + (scenario ? '.' : `The requirement is: ${question.question}`);
+  }
+
+  function buildPracticalExample(question) {
+    const answer = (question.validatedAnswer || []).join(', ');
+    const option = (question.options || []).find((item) => item.key === answer);
+    return option ? `In practice, configure or choose ${option.text} and then verify the resulting telemetry or action in the relevant Microsoft security portal.` : '';
   }
 
 }
@@ -225,7 +259,7 @@ async function importDumpMarkdown(db) {
 }
 
 async function backfillQuestionMetadata(db) {
-  const rows = await db.all('SELECT id, title, scenario, question, subtopic, difficulty, scenario_family FROM questions');
+  const rows = await db.all('SELECT id, title, scenario, question, subtopic, difficulty, scenario_family, options_json, validated_answer_json FROM questions');
   for (const row of rows) {
     const inferredSubtopic = inferSubtopic(row);
     const inferredDifficulty = inferDifficulty(row);
@@ -239,8 +273,31 @@ async function backfillQuestionMetadata(db) {
       await db.run("UPDATE questions SET source_type = 'Original authored' WHERE id = ?", [row.id]);
       await db.run("UPDATE questions SET difficulty = 'advanced' WHERE id = ?", [row.id]);
     }
+    const expected = JSON.parse(row.validated_answer_json || '[]');
+    const options = JSON.parse(row.options_json || '[]');
+    let optionsChanged = false;
+    const revisedOptions = options.map((option) => {
+      if (!isGenericExplanation(option.explanation)) return option;
+      optionsChanged = true;
+      return { ...option, explanation: buildOptionExplanation(row, option, expected) };
+    });
+    if (optionsChanged) {
+      await db.run('UPDATE questions SET options_json = ? WHERE id = ?', [JSON.stringify(revisedOptions), row.id]);
+    }
 
     await db.run('UPDATE questions SET scenario_family = ? WHERE id = ? AND scenario_family = ?', [inferScenarioFamily(row), row.id, 'General']);
+  }
+
+  function isGenericExplanation(explanation) {
+    if (!explanation) return true;
+    return ['matches the supplied answer concept', 'plausible alternative', 'not the best choice', 'does not satisfy the stated requirement', 'technically correct choice'].some((phrase) => String(explanation).toLowerCase().includes(phrase));
+  }
+
+  function buildOptionExplanation(question, option, expected) {
+    if (expected.includes(option.key)) {
+      return `Option ${option.key} is correct because "${option.text}" directly addresses the requirement to ${question.question.toLowerCase()} It satisfies the ${question.subtopic || 'security operations'} constraint.`;
+    }
+    return `Option ${option.key} is incorrect because "${option.text}" does not provide the required ${question.subtopic || 'security operations'} outcome for "${question.question}". It would leave the decisive condition unresolved.`;
   }
 }
 

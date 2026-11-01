@@ -60,6 +60,10 @@ async function main() {
       subtopic: r.subtopic,
       difficulty: r.difficulty,
       scenarioFamily: r.scenario_family,
+      correctAnswerExplanation: r.correct_answer_explanation,
+      decisiveClue: r.decisive_clue,
+      technicalConcept: r.technical_concept,
+      practicalExample: r.practical_example,
       learnReferences: JSON.parse(r.learn_references_json || '[]'),
       ...(includeAnswers ? {
         originalAnswer: r.original_answer,
@@ -346,6 +350,11 @@ async function buildDiagnostics(db) {
   const recent = await db.get('SELECT COUNT(DISTINCT question_id) AS recentlyAttempted FROM exam_answers WHERE id > COALESCE((SELECT MAX(id) - 200 FROM exam_answers), 0)');
   const duplicates = await db.get('SELECT COUNT(*) - COUNT(DISTINCT scenario_family) AS duplicateScenarioRecords FROM questions WHERE active = 1');
   const sessions = await db.get('SELECT COUNT(*) AS sessions FROM exam_sessions');
+  const explanationRows = await db.all('SELECT options_json FROM questions WHERE active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != \'[]\'');
+  const genericPhrases = ['matches the supplied answer concept', 'plausible alternative', 'not the best choice', 'does not satisfy the stated requirement'];
+  const genericOptionExplanations = explanationRows.reduce((count, row) => (
+    count + JSON.parse(row.options_json || '[]').filter((option) => genericPhrases.some((phrase) => String(option.explanation || '').toLowerCase().includes(phrase))).length
+  ), 0);
   const pools = await db.all(`
     SELECT difficulty, source_type, COUNT(*) AS count
     FROM questions
@@ -363,6 +372,7 @@ async function buildDiagnostics(db) {
     pools,
     importedDumpArchive: importedDumpArchive.count,
     importedDumpPlayable: importedDumpPlayable.count,
+    explanationAudit: { playable: explanationRows.length, genericOptionExplanations },
     rbac: { count: rbac.count, difficulty: rbacDifficulty },
   };
 }
@@ -431,7 +441,9 @@ function buildFeedback(question, submittedAnswer, earnedPoints, availablePoints)
   const options = JSON.parse(question.options_json || '[]');
   const optionFeedback = {};
   for (const option of options) {
-    optionFeedback[option.key] = option.explanation || explainOption(question, option.key, expected);
+    optionFeedback[option.key] = isGenericExplanation(option.explanation)
+      ? explainOption(question, option, expected)
+      : option.explanation;
   }
   const answerValues = Array.isArray(submittedAnswer)
     ? submittedAnswer
@@ -449,8 +461,11 @@ function buildFeedback(question, submittedAnswer, earnedPoints, availablePoints)
     earnedPoints,
     availablePoints,
     optionFeedback,
-    decisiveClue: decisiveClueFor(question),
+    correctAnswerExplanation: question.correct_answer_explanation || correctAnswerExplanationFor(question, expected),
+    decisiveClue: question.decisive_clue || decisiveClueFor(question),
     topic: question.subtopic || 'SC-200 security operations',
+    technicalConcept: question.technical_concept || question.subtopic || 'Microsoft security operations',
+    practicalExample: question.practical_example || practicalExampleFor(question, expected),
     references,
     ...(isQueryQuestion(question) ? {
       correctedQuery: expected.map((value) => options.find((option) => option.key === value)?.text || value).join('\n'),
@@ -459,9 +474,35 @@ function buildFeedback(question, submittedAnswer, earnedPoints, availablePoints)
   };
 }
 
-function explainOption(question, optionKey, expected) {
-  if (expected.includes(optionKey)) return `This is the best choice because it directly solves the ${question.subtopic || 'security operations'} requirement.`;
-  return `This choice does not fit as well because it misses the main requirement. The better choice is ${expected.join(', ')}.`;
+function explainOption(question, option, expected) {
+  if (expected.includes(option.key)) {
+    return `Option ${option.key} is correct because "${option.text}" directly addresses the requirement to ${question.question.toLowerCase()} The other choices select a different control or leave that requirement unresolved.`;
+  }
+  return `Option ${option.key} is incorrect because it proposes "${option.text}", which does not provide the required ${question.subtopic || 'security operation'} outcome for "${question.question}". It would leave the decisive condition unresolved.`;
+}
+
+function isGenericExplanation(explanation) {
+  if (!explanation) return true;
+  return [
+    'matches the supplied answer concept',
+    'plausible alternative',
+    'not the best choice',
+    'does not satisfy the stated requirement or uses the wrong control',
+    'does not meet the requirement',
+    'technically correct choice',
+  ].some((phrase) => explanation.toLowerCase().includes(phrase));
+}
+
+function correctAnswerExplanationFor(question, expected) {
+  const options = JSON.parse(question.options_json || '[]');
+  const selected = options.filter((option) => expected.includes(option.key)).map((option) => option.text).join('; ');
+  return `The validated answer is ${expected.join(', ')} because ${selected || 'it satisfies the stated requirement'}; the decisive distinction is the technical requirement described in the scenario.`;
+}
+
+function practicalExampleFor(question, expected) {
+  const options = JSON.parse(question.options_json || '[]');
+  const selected = options.find((option) => expected.includes(option.key));
+  return selected ? `Practical check: configure or choose "${selected.text}" and verify the resulting telemetry or action in the relevant Microsoft security portal.` : '';
 }
 
 function decisiveClueFor(question) {

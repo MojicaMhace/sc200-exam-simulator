@@ -289,16 +289,8 @@ export function QuestionCard({ question, onAnswer, currentAnswer, submittedAnswe
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-3 flex flex-wrap gap-2 text-xs">
-        <span className={`rounded-full px-2 py-1 font-semibold ${question.sourceType === 'Imported' || question.sourceType === 'Reconstructed from supplied dump' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200' : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200'}`}>
-          {question.sourceType === 'Reconstructed from supplied dump' ? 'Reconstructed dump' : question.sourceType === 'Imported' ? 'Imported dump' : 'Newly authored'}
-        </span>
-        <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-          {question.difficulty || 'validated'}
-        </span>
-      </div>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{question.scenario}</p>
-      {question.questionType !== 'case_study' && (
+      {question.questionType !== 'case_study' && question.question.trim() !== question.scenario.trim() && (
         <p className="mt-3 font-medium text-slate-800 dark:text-slate-100">{question.question}</p>
       )}
       {renderByType()}
@@ -320,8 +312,11 @@ export function QuestionCard({ question, onAnswer, currentAnswer, submittedAnswe
               return `${key}) ${option?.text || key}`
             }).join('; ')}
           </p>
+          <p className="text-sm"><span className="font-semibold">Why it is correct:</span> {feedback.correctAnswerExplanation}</p>
           <p className="text-sm"><span className="font-semibold">What this question is testing:</span> {feedback.topic}</p>
+          <p className="text-sm"><span className="font-semibold">Technical concept:</span> {feedback.technicalConcept}</p>
           <p className="text-sm"><span className="font-semibold">Important clue:</span> {feedback.decisiveClue}</p>
+          {feedback.practicalExample && <p className="text-sm"><span className="font-semibold">Practical example:</span> {feedback.practicalExample}</p>}
           {feedback.correctedQuery && <pre className="overflow-x-auto rounded bg-slate-900 p-3 text-xs text-slate-100">{feedback.correctedQuery}</pre>}
           <div className="space-y-1">
             <p className="text-sm font-semibold">Why each choice works or does not fit:</p>

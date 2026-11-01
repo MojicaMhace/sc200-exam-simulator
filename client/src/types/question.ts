@@ -62,8 +62,11 @@ export interface AnswerFeedback {
   earnedPoints: number
   availablePoints: number
   optionFeedback: Record<string, string>
+  correctAnswerExplanation?: string
   decisiveClue: string
   topic: string
+  technicalConcept?: string
+  practicalExample?: string
   references: string[]
   correctedQuery?: string
 }
