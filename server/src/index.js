@@ -109,7 +109,10 @@ async function main() {
     const recentCaseIds = new Set(
       recentRows.flatMap((row) => JSON.parse(row.question_ids_json || '[]')),
     );
-    const selectedCases = chooseFresh(caseQuestions, Math.min(1, caseQuestions.length), recentCaseIds, random);
+    const eligibleCases = requestedDifficulty === 'all'
+      ? caseQuestions
+      : caseQuestions.filter((question) => question.difficulty === requestedDifficulty);
+    const selectedCases = chooseFresh(eligibleCases, Math.min(1, eligibleCases.length), recentCaseIds, random);
     const caseStudyDistribution = selectedCases.reduce((counts, question) => {
       const key = question.source_type === 'Imported' ? 'imported' : 'authored';
       counts[key] += 1;
@@ -141,6 +144,7 @@ async function main() {
       sourceDistribution,
       caseStudyDistribution,
       difficulty: requestedDifficulty,
+      sourceShortage: selection.sourceShortage || null,
       selectionSeed,
       startedAt,
     });
@@ -282,6 +286,23 @@ function selectBlueprintQuestions(questions, total, recentlySeen = new Set(), re
   const imported = eligible.filter((question) => question.source_type === 'Imported');
   const authored = eligible.filter((question) => question.source_type !== 'Imported');
 
+  if (requestedDifficulty === 'expert' && imported.length < importedCount && authored.length >= total) {
+    const selectedAuthored = chooseFresh(authored, total, recentlySeen, random);
+    return {
+      questionIds: shuffle(selectedAuthored, random).map((question) => question.id),
+      sourceDistribution: {
+        imported: 0,
+        authored: selectedAuthored.length,
+        requestedTotal: total,
+      },
+      sourceShortage: {
+        requestedImported: importedCount,
+        availableImported: imported.length,
+        message: 'Expert questions are currently authored-only because the imported dump has no validated Expert records.',
+      },
+    };
+  }
+
   if (imported.length < importedCount || authored.length < authoredCount) {
     throw new Error(
       `The requested ${total}-question ${requestedDifficulty} exam needs ${importedCount} imported and ${authoredCount} newly authored validated questions, ` +
@@ -307,7 +328,8 @@ async function buildDiagnostics(db) {
     SELECT COUNT(*) AS sqliteRecords,
       SUM(CASE WHEN active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS playable,
       SUM(CASE WHEN source_type = 'Imported' AND active = 1 AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS imported,
-      SUM(CASE WHEN source_type != 'Imported' AND active = 1 AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS authored
+      SUM(CASE WHEN source_type != 'Imported' AND active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS authored,
+      COUNT(DISTINCT id) AS uniqueQuestionIds
     FROM questions
   `);
   const difficulty = await db.all('SELECT difficulty, COUNT(*) AS count FROM questions WHERE active = 1 GROUP BY difficulty');
@@ -318,33 +340,43 @@ async function buildDiagnostics(db) {
   const recent = await db.get('SELECT COUNT(DISTINCT question_id) AS recentlyAttempted FROM exam_answers WHERE id > COALESCE((SELECT MAX(id) - 200 FROM exam_answers), 0)');
   const duplicates = await db.get('SELECT COUNT(*) - COUNT(DISTINCT scenario_family) AS duplicateScenarioRecords FROM questions WHERE active = 1');
   const sessions = await db.get('SELECT COUNT(*) AS sessions FROM exam_sessions');
+  const pools = await db.all(`
+    SELECT difficulty, source_type, COUNT(*) AS count
+    FROM questions
+    WHERE active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'
+    GROUP BY difficulty, source_type
+  `);
   return {
     apiVersion: '2026-11-01-balanced-selection',
-    database: { ...counts, uniqueQuestionIds: counts.sqliteRecords, ...families, ...recent, ...duplicates, sessions: sessions.sessions },
+    database: { ...counts, ...families, ...recent, ...duplicates, sessions: sessions.sessions },
     difficulty,
     domains,
+    pools,
     rbac: { count: rbac.count, difficulty: rbacDifficulty },
   };
 }
 
 function chooseFresh(pool, count, recentlySeen, random = Math.random) {
-  const selected = [];
-  const families = new Set();
   const ordered = shuffle(pool, random).sort(
     (left, right) => Number(recentlySeen.has(left.id)) - Number(recentlySeen.has(right.id)),
   );
-  for (const question of ordered) {
-    if (selected.length >= count) break;
-    if (!families.has(question.scenario_family)) {
-      selected.push(question);
-      families.add(question.scenario_family);
-    }
-  }
-  if (selected.length < count) {
-    for (const question of ordered) {
-      if (selected.length >= count) break;
-      if (!selected.some((item) => item.id === question.id)) selected.push(question);
-    }
+  const selected = [];
+  const selectedIds = new Set();
+  const familyCounts = new Map();
+  const maxDistinctFamilies = new Set(pool.map((question) => question.scenario_family)).size;
+
+  while (selected.length < count && selected.length < ordered.length) {
+    const candidates = ordered.filter((question) => !selectedIds.has(question.id));
+    const familyLimited = candidates.filter((question) => (
+      !familyCounts.has(question.scenario_family)
+      || selected.length >= maxDistinctFamilies
+      || familyCounts.get(question.scenario_family) < Math.ceil(count / maxDistinctFamilies)
+    ));
+    const candidatePool = familyLimited.length > 0 ? familyLimited : candidates;
+    const question = candidatePool[Math.floor(random() * candidatePool.length)];
+    selected.push(question);
+    selectedIds.add(question.id);
+    familyCounts.set(question.scenario_family, (familyCounts.get(question.scenario_family) || 0) + 1);
   }
   return selected;
 }

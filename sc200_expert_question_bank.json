@@ -1,0 +1,2281 @@
+[
+  {
+    "id": "SC200-EXPERT-001",
+    "sequence": 13001,
+    "title": "KQL Result Cardinality",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "SigninLogs is summarized by UserPrincipalName and joined to IdentityInfo; users repeat and counts are inflated.",
+    "question": "How should the enrichment be made one-to-one?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Deduplicate IdentityInfo to one current row per UserPrincipalName before joining",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use join kind=innerunique and assume the right side is unique",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Union the tables and summarize afterward",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Multiply the final count by the number of matches",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Join cardinality",
+    "scenarioFamily": "SC-200 expert 001 Join cardinality",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-002",
+    "sequence": 13002,
+    "title": "Join Flavor Selection",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Every DeviceInfo row must remain, while matching alerts contribute AlertCount and LastAlertTime.",
+    "question": "Which pattern meets the requirement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "DeviceInfo | join kind=leftouter (Alerts | summarize AlertCount=count(), LastAlertTime=max(TimeGenerated) by DeviceId) on DeviceId",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "DeviceInfo | join kind=inner Alerts on DeviceId",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "DeviceInfo | join kind=rightouter Alerts on DeviceId",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "DeviceInfo | union Alerts",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Join flavors",
+    "scenarioFamily": "SC-200 expert 002 Join flavors",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-003",
+    "sequence": 13003,
+    "title": "Union Schema Drift",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A union of SecurityEvent and CommonSecurityLog creates SourceIP_string and SourceIP_real because source types differ.",
+    "question": "What is the durable fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Normalize each leg to a common type and project the canonical field before union",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use union kind=inner and keep the original field",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Join the legs on SourceIP",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Parse the conflicted field after the union",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Union schema",
+    "scenarioFamily": "SC-200 expert 003 Union schema",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-004",
+    "sequence": 13004,
+    "title": "Query Debugging Scope",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "An analytics rule says DeviceId cannot be resolved; one union leg never creates that column.",
+    "question": "What is the best debugging sequence?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run each leg independently, inspect getschema, and project a common DeviceId before union",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Increase rule frequency",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Wrap the entire query in materialize()",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Convert the rule to an incident template",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Query debugging",
+    "scenarioFamily": "SC-200 expert 004 Query debugging",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-005",
+    "sequence": 13005,
+    "title": "KQL Time Window",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A one-hour rule with a ten-minute lookback misses events arriving fifteen minutes late and repeats some matches.",
+    "question": "What design addresses both?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use a longer overlap and entity-based grouping or suppression",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use ingestion_time() as the only timestamp",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Remove the overlap",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Run the rule daily",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Time windows",
+    "scenarioFamily": "SC-200 expert 005 Time windows",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-006",
+    "sequence": 13006,
+    "title": "Join Hint Diagnosis",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A 2-billion-row SigninLogs join to a small watchlist times out after a broad range and shuffle hint are added.",
+    "question": "What should be tried first?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Filter and project both inputs before joining, keeping the small side compact",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Broadcast both inputs",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Replace filters with search *",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Replace join with union",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Join performance",
+    "scenarioFamily": "SC-200 expert 006 Join performance",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details",
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-007",
+    "sequence": 13007,
+    "title": "AMA DCR Association",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "Linux VMs have AMA and a Syslog DCR, but no Syslog events arrive; only a data collection endpoint is scoped.",
+    "question": "What is missing?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Associate the DCR with the target VMs or their resource group",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Install the legacy agent",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Change the destination to Event Hub",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Create an analytics rule",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "DCR associations",
+    "scenarioFamily": "SC-200 expert 007 DCR associations",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert",
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-008",
+    "sequence": 13008,
+    "title": "DCR Transform",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "Custom AMA records contain ISO EventTime strings, but the destination expects datetime and rejects records.",
+    "question": "Where should conversion occur?",
+    "options": [
+      {
+        "key": "A",
+        "text": "In the DCR transformation using todatetime with an explicit malformed-value fallback",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "In a hunting query",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "In a workbook",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "By projecting EventTime away",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "DCR transformations",
+    "scenarioFamily": "SC-200 expert 008 DCR transformations",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-009",
+    "sequence": 13009,
+    "title": "CEF Facility Mapping",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "CEF arrives over TCP, but CommonSecurityLog has empty DeviceVendor and DeviceProduct fields.",
+    "question": "What should be checked first?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Verify the sender's standards-compliant CEF header order and collector parser mapping",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Create a Fusion rule",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Replace CommonSecurityLog with Syslog",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Use union kind=inner",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "CEF parsing",
+    "scenarioFamily": "SC-200 expert 009 CEF parsing",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-010",
+    "sequence": 13010,
+    "title": "WEF Subscription",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "Only two of 100 servers forward WEF events; the source group is stale and the collector service lacks local event-log access.",
+    "question": "What is the right sequence?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Fix source targeting and collector permissions, then validate one source end to end",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Create an analytics rule immediately",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Install AMA only on the collector",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Increase the rule lookback",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "WEF troubleshooting",
+    "scenarioFamily": "SC-200 expert 010 WEF troubleshooting",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-011",
+    "sequence": 13011,
+    "title": "AMA Migration",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "Legacy agent and AMA both collect Windows Security events during migration, producing duplicates.",
+    "question": "What must happen before removing the legacy agent?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Compare AMA ingestion and field parity, then remove legacy collection after validation",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Delete the workspace table",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Disable all DCR associations",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Move all data to Basic Logs",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "AMA migration",
+    "scenarioFamily": "SC-200 expert 011 AMA migration",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-012",
+    "sequence": 13012,
+    "title": "Search Jobs Backfill",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A responder must search 180 days of archived logs for a rare hash and retain results for investigation.",
+    "question": "Which capability fits?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A Search Job over the relevant tables and time range",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "A five-minute workbook refresh",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "An automation rule on new incidents",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "A let statement in an analytics rule",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Search Jobs",
+    "scenarioFamily": "SC-200 expert 012 Search Jobs",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-013",
+    "sequence": 13013,
+    "title": "KQL Jobs Materialization",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A long-running query must execute asynchronously and persist output for downstream processing.",
+    "question": "What distinguishes KQL Jobs?",
+    "options": [
+      {
+        "key": "A",
+        "text": "They execute asynchronously and materialize query output for later use",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "They are only workbook aliases",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "They create incidents for every row",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "They replace DCR ingestion",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "KQL Jobs",
+    "scenarioFamily": "SC-200 expert 013 KQL Jobs",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details",
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-014",
+    "sequence": 13014,
+    "title": "Summary Rule Grain",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "An hourly audit summary must preserve first/last event times and bounded source-IP context.",
+    "question": "Which aggregate is appropriate?",
+    "options": [
+      {
+        "key": "A",
+        "text": "count(), min(TimeGenerated), max(TimeGenerated), and bounded make_set(SourceIp) by AccountId and Operation",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Only count() by AccountId",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Unbounded make_list(*)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Project away AccountId before summarizing",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Summary Rules",
+    "scenarioFamily": "SC-200 expert 014 Summary Rules",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert",
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-015",
+    "sequence": 13015,
+    "title": "Summary Rule Freshness",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A rule reads hourly summaries every five minutes and undercounts because the current bucket is incomplete.",
+    "question": "What fixes the semantic mismatch?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Query only closed time buckets and document summary latency",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Multiply partial counts by twelve",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Disable transformations",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Union raw and summary data without deduplication",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Summary freshness",
+    "scenarioFamily": "SC-200 expert 015 Summary freshness",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-016",
+    "sequence": 13016,
+    "title": "Detection Frequency Overlap",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A rule runs every fifteen minutes with a thirty-minute lookback and duplicates device/hash alerts.",
+    "question": "Which configuration is correct?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Keep overlap for late data and group alerts by device and hash",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Remove overlap and use ingestion_time only",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Run every thirty minutes with one-minute lookback",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Replace the rule with a hunting query",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Detection scheduling",
+    "scenarioFamily": "SC-200 expert 016 Detection scheduling",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-017",
+    "sequence": 13017,
+    "title": "Detection Suppression",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Impossible travel should alert once per user every four hours but continue evaluating other users.",
+    "question": "Which design matches?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use entity-aware grouping or suppression keyed to the user",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use global rule suppression",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Disable the rule after its first alert",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Raise the threshold until one user matches",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Suppression",
+    "scenarioFamily": "SC-200 expert 017 Suppression",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-018",
+    "sequence": 13018,
+    "title": "Defender RBAC Alerts",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "An analyst can read Defender evidence but cannot modify alert status or assignment within the correct device group.",
+    "question": "Which permission is missing?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Alerts (Manage)",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Security data basics (Read)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Basic Live Response (Manage)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Device discovery (Read)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Defender alert RBAC",
+    "scenarioFamily": "SC-200 expert 018 Defender alert RBAC",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-019",
+    "sequence": 13019,
+    "title": "Defender Response Scope",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "An analyst has Response (Manage) but can isolate devices in Default and not Finance.",
+    "question": "What should be checked first?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Whether the role assignment includes the Finance device-group scope",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Whether Sentinel Reader is assigned",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Whether a workbook is assigned",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Whether the alert is closed",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Device-group scope",
+    "scenarioFamily": "SC-200 expert 019 Device-group scope",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-020",
+    "sequence": 13020,
+    "title": "Attack Disruption Boundary",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "Attack disruption disables a compromised account and isolates devices before a custom AIR approval workflow runs.",
+    "question": "Why?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Attack disruption is a separate high-confidence autonomous protection capability, not a custom AIR approval step",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Attack disruption only creates a workbook",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "AIR approval always precedes disruption",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "The Sentinel workspace was deleted",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Attack disruption",
+    "scenarioFamily": "SC-200 expert 020 Attack disruption",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details",
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-021",
+    "sequence": 13021,
+    "title": "Automated Investigation Approval",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "AIR remediation should require analyst review while high-confidence attack disruption remains enabled.",
+    "question": "Which model is correct?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Configure AIR remediation approval and retain attack disruption as an independent control",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Disable attack disruption",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Grant every analyst Global Administrator",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Convert the investigation to a KQL Job",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "AIR approval",
+    "scenarioFamily": "SC-200 expert 021 AIR approval",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert",
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-022",
+    "sequence": 13022,
+    "title": "Live Response Read Only",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "Tier-1 needs hashes and process inspection but must not upload tools or execute scripts.",
+    "question": "Which least privilege capability fits?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Basic Live Response (Manage)",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Advanced Live Response (Manage)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Response (Read)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Sentinel Playbook Operator",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Basic Live Response",
+    "scenarioFamily": "SC-200 expert 022 Basic Live Response",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-023",
+    "sequence": 13023,
+    "title": "Live Response Remediation",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A containment engineer must upload and execute a signed script through Live Response on a restricted device group.",
+    "question": "What is required?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Advanced Live Response (Manage) scoped to that device group",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Security data basics (Read)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Alerts (Read)",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Sentinel Responder at subscription scope",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Advanced Live Response",
+    "scenarioFamily": "SC-200 expert 023 Advanced Live Response",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-024",
+    "sequence": 13024,
+    "title": "Isolation And Evidence",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A device needs immediate isolation, but the team must preserve a capture and investigation package before rebooting.",
+    "question": "What sequence is best?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Isolate, collect supported evidence, then perform controlled remediation",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Reboot and reimage first",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Run unsigned scripts before isolation",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Close the alert and wait",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Isolation and evidence",
+    "scenarioFamily": "SC-200 expert 024 Isolation and evidence",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-025",
+    "sequence": 13025,
+    "title": "Hybrid Incident Correlation",
+    "domain": "Investigate and respond to incidents",
+    "questionType": "single_choice",
+    "scenario": "Defender endpoint, Entra sign-in, and CEF firewall events describe one user but have different ingestion delays.",
+    "question": "How should they be correlated?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use stable entities and event times with an explicit lateness tolerance, preserving source timestamps",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Join only on exact TimeGenerated equality",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Assume adjacent union rows are related",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Discard Sentinel events",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Hybrid correlation",
+    "scenarioFamily": "SC-200 expert 025 Hybrid correlation",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-026",
+    "sequence": 13026,
+    "title": "Hybrid RBAC Boundary",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "An analyst can investigate a Defender incident but cannot query its Sentinel Log Analytics workspace.",
+    "question": "What explains this?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Defender unified RBAC does not automatically grant Azure Log Analytics workspace data access",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "The analyst needs Global Administrator",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Live Response grants Sentinel access",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Search Jobs bypass RBAC",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "RBAC boundary",
+    "scenarioFamily": "SC-200 expert 026 RBAC boundary",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-027",
+    "sequence": 13027,
+    "title": "Hybrid Playbook Identity",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A Sentinel playbook calls Defender and a ticket API; the analyst can configure it but the managed identity fails at the Defender call.",
+    "question": "What should be investigated?",
+    "options": [
+      {
+        "key": "A",
+        "text": "The managed identity's Defender/API and downstream permissions separately from design-time analyst rights",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Subscription Owner for the analyst",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "An extra KQL union",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Changing incident severity",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Automation identity",
+    "scenarioFamily": "SC-200 expert 027 Automation identity",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details",
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-028",
+    "sequence": 13028,
+    "title": "Search Job Access",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Interactive hunting works, but starting a Search Job against an archived table in another workspace is unauthorized.",
+    "question": "What is most relevant?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Verify data-plane access to the target workspace/table and Search Job capability at that scope",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Grant Advanced Live Response",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Change join flavor",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Enable attack disruption",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Search authorization",
+    "scenarioFamily": "SC-200 expert 028 Search authorization",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-endpoint/respond-machine-alert",
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-029",
+    "sequence": 13029,
+    "title": "KQL Missing Column",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Roles is dynamic in one table and absent in another union leg; an extend referencing Roles fails.",
+    "question": "What repair is robust?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Project a default dynamic Roles column in every leg with a consistent type before the extend",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Filter on Roles before union",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Replace union with search *",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Cast only after the extend",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Typed schema",
+    "scenarioFamily": "SC-200 expert 029 Typed schema",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-030",
+    "sequence": 13030,
+    "title": "KQL Leftanti Investigation",
+    "domain": "Investigate and respond to incidents",
+    "questionType": "single_choice",
+    "scenario": "You need successful interactive sign-ins whose user is absent from an approved-account table, retaining each unmatched sign-in.",
+    "question": "Which operator expresses this?",
+    "options": [
+      {
+        "key": "A",
+        "text": "leftanti join from SigninLogs to the approved table on UserPrincipalName",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "inner join then filter Approved=false",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "rightouter join and drop the right side",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "union kind=inner",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Anti-join",
+    "scenarioFamily": "SC-200 expert 030 Anti-join",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/union-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-031",
+    "sequence": 13031,
+    "title": "CEF And AMA Pipeline",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "A CEF DCR transformation drops appliances lacking Hostname even though SourceIP is present.",
+    "question": "How should it be changed?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Retain a nullable normalized hostname or derive a fallback from SourceIP instead of dropping the row",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Disable the DCR",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Change to SecurityEvent",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Add a Defender device group",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "CEF transformation",
+    "scenarioFamily": "SC-200 expert 031 CEF transformation",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-032",
+    "sequence": 13032,
+    "title": "Rule Query Validation",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A scheduled rule query works interactively but creation fails due to an unsupported final dynamic projection and subquery-scoped parameter.",
+    "question": "What should be done?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Validate the exact final query in the rule editor, including parameter scope and projected names/types",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Add more joins",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Convert every field to dynamic",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Change only the frequency",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Rule validation",
+    "scenarioFamily": "SC-200 expert 032 Rule validation",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-033",
+    "sequence": 13033,
+    "title": "Incident Response Automation",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A playbook should run only for newly created high-severity incidents; later edits must not retrigger it.",
+    "question": "Which trigger is precise?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use the incident-created trigger with severity/status conditions, not incident-updated",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use every incident-updated event",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Use a workbook refresh trigger",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Start a Search Job whenever an incident exists",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Automation triggers",
+    "scenarioFamily": "SC-200 expert 033 Automation triggers",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-034",
+    "sequence": 13034,
+    "title": "KQL Lookup Direction",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A 30-day SigninLogs dataset must be enriched with a small VIP account list. The query returns duplicate sign-ins after the enrichment.",
+    "question": "Which design best preserves one row per sign-in?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Pre-aggregate or deduplicate the VIP list by UserPrincipalName before a leftouter join",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use a fullouter join and remove null rows",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Union the VIP list with SigninLogs",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Run distinct after projecting every VIP attribute",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Lookup cardinality",
+    "scenarioFamily": "SC-200 expert 034 Lookup cardinality",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/parse-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-035",
+    "sequence": 13035,
+    "title": "KQL Anti Join Nulls",
+    "domain": "Investigate and respond to incidents",
+    "questionType": "single_choice",
+    "scenario": "A deny-list table contains a null DeviceId. The analyst wants to find DeviceInfo records whose DeviceId is not on the deny list.",
+    "question": "Which consideration is important?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Clean or exclude null keys before the leftanti join and validate key normalization",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use innerunique so nulls are automatically ignored",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Replace DeviceId with TimeGenerated",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Use union kind=outer to compare keys",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Anti-join null semantics",
+    "scenarioFamily": "SC-200 expert 035 Anti-join null semantics",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/parse-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-036",
+    "sequence": 13036,
+    "title": "KQL Make Set Bounds",
+    "domain": "Investigate and respond to incidents",
+    "questionType": "single_choice",
+    "scenario": "A summary query uses make_set(CommandLine) for a high-volume account and causes oversized dynamic values.",
+    "question": "What is the safest adjustment?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Set an explicit maximum set size and retain a separate count of distinct values",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Replace make_set with make_list without a limit",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Serialize the entire raw table into one dynamic value",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Drop the account key",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Dynamic aggregate limits",
+    "scenarioFamily": "SC-200 expert 036 Dynamic aggregate limits",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-037",
+    "sequence": 13037,
+    "title": "KQL Materialize Placement",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Two branches reuse the same filtered 30-day SigninLogs population. The query scans the source twice and is approaching its resource limit.",
+    "question": "Where can materialize help most?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Materialize the shared filtered and projected expression before branching",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Materialize each final result after all joins",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Materialize the entire unfiltered table",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Use materialize around a scalar constant only",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Materialize reuse",
+    "scenarioFamily": "SC-200 expert 037 Materialize reuse",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-038",
+    "sequence": 13038,
+    "title": "KQL Parse Failure",
+    "domain": "Investigate and respond to incidents",
+    "questionType": "single_choice",
+    "scenario": "A parser extracts a process hash from heterogeneous CommandLine values. Some rows lack the expected token, and a later join unexpectedly loses those rows.",
+    "question": "What is the robust approach?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use a tolerant extraction, preserve nulls, and apply join filtering only when a hash exists",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use extract with a mandatory match and discard failures",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Convert every CommandLine to JSON",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Join on the complete CommandLine string",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "KQL parsing",
+    "scenarioFamily": "SC-200 expert 038 KQL parsing",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-039",
+    "sequence": 13039,
+    "title": "KQL Time Zone Logic",
+    "domain": "Investigate and respond to incidents",
+    "questionType": "single_choice",
+    "scenario": "An investigation compares local business hours across users in multiple regions. The source timestamps are UTC and the query currently compares hour values without conversion.",
+    "question": "What should be done?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use the documented user time-zone mapping to convert or calculate the intended local window explicitly",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Assume the workspace local time zone",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Use ingestion_time() as local time",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Add eight hours for every user",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Time zone analysis",
+    "scenarioFamily": "SC-200 expert 039 Time zone analysis",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details",
+      "https://learn.microsoft.com/en-us/defender-endpoint/live-response"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-040",
+    "sequence": 13040,
+    "title": "DCR Multi Destination",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "A DCR must send selected security events to the workspace and a filtered copy to Event Hubs. The author places both destinations under one data flow but sees only one output.",
+    "question": "What should be verified?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Define the required streams and destination mappings explicitly, with transformations aligned to each output",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Add a second analytics rule",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Install two AMA agents on every VM",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Use a Sentinel workbook as the second destination",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "DCR destinations",
+    "scenarioFamily": "SC-200 expert 040 DCR destinations",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-endpoint/live-response",
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-041",
+    "sequence": 13041,
+    "title": "DCR Association Precedence",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "A VM is associated with two DCRs that both collect Syslog, one with a broad facility filter and one with a narrow filter. Collection is higher than expected.",
+    "question": "What is the correct diagnosis?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Review all applicable DCR associations because overlapping collection rules can cause duplicate or broader ingestion",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "The narrow DCR always overrides the broad one",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "The workspace automatically deduplicates all streams",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Only the DCE determines facility filters",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "DCR overlap",
+    "scenarioFamily": "SC-200 expert 041 DCR overlap",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/parse-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-042",
+    "sequence": 13042,
+    "title": "AMA Data Collection Endpoint",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "Protected servers cannot reach the public ingestion endpoint, but a private link topology is available. AMA is installed and the DCR is associated.",
+    "question": "Which component should be validated?",
+    "options": [
+      {
+        "key": "A",
+        "text": "The DCR's data collection endpoint routing and network access from the protected servers",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "The Sentinel incident severity",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "The Defender device group",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "The workbook's query permissions",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "AMA networking",
+    "scenarioFamily": "SC-200 expert 042 AMA networking",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/parse-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-043",
+    "sequence": 13043,
+    "title": "CEF TCP Framing",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "A CEF appliance sends events over TCP, but records arrive concatenated and the parser reports malformed headers. UDP tests work but are not acceptable for the volume.",
+    "question": "What should be investigated?",
+    "options": [
+      {
+        "key": "A",
+        "text": "The sender and collector's TCP framing, delimiter, and connector configuration",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Change the table to WindowsEvent",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Add a join hint to CommonSecurityLog",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Enable attack disruption",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "CEF transport",
+    "scenarioFamily": "SC-200 expert 043 CEF transport",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-044",
+    "sequence": 13044,
+    "title": "WEF Collector Capacity",
+    "domain": "Configure data access",
+    "questionType": "single_choice",
+    "scenario": "A collector receives intermittent WEF gaps during peak authentication periods. Source subscriptions are correct and permissions have been verified.",
+    "question": "Which next step is most useful?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Measure collector CPU, memory, queue backlog, and Event Forwarding operational logs before scaling or redistributing sources",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Increase every Sentinel rule lookback",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Delete and recreate the workspace",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Convert events to CEF",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "WEF capacity",
+    "scenarioFamily": "SC-200 expert 044 WEF capacity",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-045",
+    "sequence": 13045,
+    "title": "Search Job Result Lifecycle",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A Search Job result is needed for a case review, but the team assumes it will remain indefinitely without documenting retention or access.",
+    "question": "What should the team do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Confirm the result table's retention, permissions, and lifecycle, and export or preserve approved findings as required",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Assume Search Job results inherit unlimited raw-data retention",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Re-run the job every minute",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Convert the result to a device isolation action",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Search result lifecycle",
+    "scenarioFamily": "SC-200 expert 045 Search result lifecycle",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-046",
+    "sequence": 13046,
+    "title": "KQL Job Idempotency",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A daily KQL Job writes detections to a custom table. A retry after a transient failure can write the same day's output twice.",
+    "question": "Which design reduces duplicate downstream actions?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Include a deterministic run or event key and make the write/consumer logic idempotent",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Increase the query timeout only",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Use random IDs for every output row",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Remove the date from the output",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "KQL Job idempotency",
+    "scenarioFamily": "SC-200 expert 046 KQL Job idempotency",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details",
+      "https://learn.microsoft.com/en-us/defender-endpoint/live-response"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-047",
+    "sequence": 13047,
+    "title": "Summary Rule Late Arrival",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A summary rule aggregates by five-minute event time, but late events can arrive after the bucket is written. Investigators need a corrected aggregate rather than duplicate rows.",
+    "question": "What pattern is appropriate?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use a documented lateness/recompute strategy and replace or merge the affected bucket deterministically",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Append every correction forever",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Ignore event time and group by ingestion order",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Delete the raw table after summarization",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Summary late arrivals",
+    "scenarioFamily": "SC-200 expert 047 Summary late arrivals",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-endpoint/live-response",
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-048",
+    "sequence": 13048,
+    "title": "Detection Rule Entity Mapping",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "An analytics rule finds suspicious PowerShell but incidents show no device entity because the query aliases the hostname inconsistently across branches.",
+    "question": "What should be corrected?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Project and map the canonical entity column consistently in the final rule result",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Add more severity conditions",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Move the entity into the rule title only",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Use a workbook parameter",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Entity mapping",
+    "scenarioFamily": "SC-200 expert 048 Entity mapping",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/parse-operator"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-049",
+    "sequence": 13049,
+    "title": "Detection Rule Suppression Window",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A credential-stuffing rule should suppress repeated alerts for the same account for one hour, but a new attack from a different account must alert immediately.",
+    "question": "Which setting best matches?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use account-keyed grouping or suppression with a one-hour window",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Use global suppression for one hour",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Disable the rule after any alert",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Set the lookup window to one hour and omit grouping",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Suppression key",
+    "scenarioFamily": "SC-200 expert 049 Suppression key",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/parse-operator",
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-050",
+    "sequence": 13050,
+    "title": "Defender Device Group Priority",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A device appears in two Defender device groups with different response permissions. An analyst receives the more restrictive effective behavior than expected.",
+    "question": "What should be reviewed?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Device-group membership, role assignment scope, and how overlapping group assignments determine effective access",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Only the Sentinel workspace role",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "The KQL query's join flavor",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "The device's wallpaper policy",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Defender group scope",
+    "scenarioFamily": "SC-200 expert 050 Defender group scope",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/azure-monitor/agents/data-collection-rule-overview",
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-051",
+    "sequence": 13051,
+    "title": "Defender Live Response Audit",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A responder runs a Live Response command during a major incident. The team needs an auditable record of who ran it, on which device, and what output was returned.",
+    "question": "Which practice is strongest?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use supported Live Response auditing and retain the session/action evidence with the incident record",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Copy commands into a personal text file only",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Disable audit logging to reduce noise",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Use a workbook screenshot as the sole record",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Live Response auditing",
+    "scenarioFamily": "SC-200 expert 051 Live Response auditing",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/search-jobs",
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-052",
+    "sequence": 13052,
+    "title": "Attack Disruption Exception",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A critical server must remain online during a maintenance window, but attack disruption protections remain enabled tenant-wide. The team wants a controlled exception without disabling all protections.",
+    "question": "What should be evaluated?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use the supported device or protection policy exception process, document approval, and monitor residual risk",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Grant the server account Global Administrator",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Disable all Defender protections",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Remove the server from every Sentinel query",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Attack disruption exceptions",
+    "scenarioFamily": "SC-200 expert 052 Attack disruption exceptions",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/azure/sentinel/detect-threats-custom",
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"
+    ]
+  },
+  {
+    "id": "SC200-EXPERT-053",
+    "sequence": 13053,
+    "title": "Hybrid Timeline Reconstruction",
+    "domain": "Investigate and respond to incidents",
+    "questionType": "single_choice",
+    "scenario": "Defender alert evidence, Entra audit events, and Sentinel firewall logs use different timestamp fields. The incident commander needs a defensible sequence of actions.",
+    "question": "What method is best?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Normalize source and event timestamps, record ingestion latency, and build the timeline using stable entities and confidence notes",
+        "explanation": "This is the technically correct choice for the stated constraint."
+      },
+      {
+        "key": "B",
+        "text": "Sort only by ingestion time and treat it as event order",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "C",
+        "text": "Discard events with different timestamp names",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      },
+      {
+        "key": "D",
+        "text": "Use alert severity as the timeline order",
+        "explanation": "This does not satisfy the stated requirement or uses the wrong control."
+      }
+    ],
+    "validatedAnswer": [
+      "A"
+    ],
+    "validationStatus": "Expert authored \u2014 technically reviewed",
+    "sourceType": "Original authored",
+    "subtopic": "Hybrid timeline",
+    "scenarioFamily": "SC-200 expert 053 Hybrid timeline",
+    "difficulty": "expert",
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details",
+      "https://learn.microsoft.com/en-us/defender-endpoint/live-response"
+    ]
+  }
+]

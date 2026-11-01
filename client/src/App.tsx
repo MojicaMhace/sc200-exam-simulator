@@ -77,7 +77,7 @@ function App() {
     setSummary(data)
   }
 
-  async function startExam(mode: PracticeMode) {
+  async function startExam(mode: PracticeMode, totalQuestions = 50) {
     setLoadingExam(true)
     setErrorMessage(null)
     setPracticeMode(mode)
@@ -86,10 +86,11 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/api/exam/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Practice', totalQuestions: 50, difficulty }),
+        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Practice', totalQuestions, difficulty: totalQuestions === 20 ? 'all' : difficulty }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || `Exam service returned ${res.status}`)
+      if (data.sourceShortage?.message) setErrorMessage(`Source distribution notice: ${data.sourceShortage.message}`)
       setSessionId(data.sessionId)
 
       const byId = new Map(availableQuestions.map((q) => [q.id, q]))
@@ -204,6 +205,13 @@ function App() {
               className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-sky-700"
             >
               <Play size={16} /> {loadingExam ? 'Loading questions...' : 'Start Practice Mode'}
+            </button>
+            <button
+              onClick={() => startExam('practice', 20)}
+              disabled={loadingExam}
+              className="inline-flex items-center gap-2 rounded-md border border-white px-4 py-2 text-sm font-semibold text-white"
+            >
+              20-question Advanced Practice
             </button>
             <button
               onClick={() => startExam('exam')}

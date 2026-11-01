@@ -9,6 +9,7 @@ const files = [
   'sc200_extended_question_bank.json',
   'sc200_skill_question_bank.json',
   'sc200_rbac_question_bank.json',
+  'sc200_expert_question_bank.json',
 ];
 
 async function main() {
