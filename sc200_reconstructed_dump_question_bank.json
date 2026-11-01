@@ -254,39 +254,42 @@
     "title": "Email-to-endpoint hash hunting operators",
     "domain": "Manage a security operations environment",
     "questionType": "multiple_choice",
-    "scenario": "Fill three blanks: EmailAttachmentInfo ... [1] (DeviceFileEvents | [2] FileName,SHA256,DeviceName,DeviceId) on SHA256 | [3] Timestamp,...",
-    "question": "Fill three blanks: EmailAttachmentInfo ... [1] (DeviceFileEvents | [2] FileName,SHA256,DeviceName,DeviceId) on SHA256 | [3] Timestamp,...",
+    "scenario": "You are hunting for an email attachment that was written to an endpoint. Start with EmailAttachmentInfo, correlate the attachment hash with matching records in DeviceFileEvents, keep the endpoint file and device fields, and retain the event timestamp in the final result.",
+    "question": "Which operator sequence correctly completes this KQL pattern: EmailAttachmentInfo | [1] (DeviceFileEvents | [2] FileName,SHA256,DeviceName,DeviceId) on SHA256 | [3] Timestamp,...?",
     "options": [
       {
         "key": "A",
         "text": "join, project, project",
-        "explanation": "This matches the supplied answer concept."
+        "explanation": "join correlates the email attachment record with the endpoint file record on SHA256. The first project limits the DeviceFileEvents side to the requested file and device columns, and the final project keeps Timestamp and the fields needed in the output."
       },
       {
         "key": "B",
         "text": "union, extend, summarize",
-        "explanation": "This is a plausible alternative, but it does not match the supplied answer concept."
+        "explanation": "union appends rows from compatible tables instead of matching the same SHA256 across two tables. extend creates or changes calculated columns rather than selecting the requested schema, and summarize aggregates rows so it would not preserve the individual email-to-endpoint match."
       },
       {
         "key": "C",
         "text": "lookup, summarize, project",
-        "explanation": "This is a plausible alternative, but it does not match the supplied answer concept."
+        "explanation": "lookup is a specialized broadcast-style enrichment operation with different size and execution expectations; it is not the intended explicit join pattern here. summarize would aggregate away individual file events before the final projection, so the matching endpoint evidence would be lost."
       },
       {
         "key": "D",
         "text": "join, extend, project",
-        "explanation": "This is a plausible alternative, but it does not match the supplied answer concept."
+        "explanation": "The join is appropriate, but extend does not select FileName, SHA256, DeviceName, and DeviceId from the DeviceFileEvents side. The requirement calls for a projected column list before the join, so extend leaves the query with the wrong schema."
       }
     ],
     "validatedAnswer": [
       "A"
     ],
-    "validationStatus": "Reconstructed — verify against original dump choices",
+    "validationStatus": "Validated reconstruction — verify exact original dump wording if supplied",
     "sourceType": "Reconstructed from supplied dump",
     "subtopic": "Advanced hunting joins and projection",
     "scenarioFamily": "SC-200 reconstructed 007 — Email-to-endpoint hash hunting operators",
     "difficulty": "advanced",
-    "learnReferences": []
+    "learnReferences": [
+      "https://learn.microsoft.com/en-us/kusto/query/join-operator",
+      "https://learn.microsoft.com/en-us/kusto/query/project-operator"
+    ]
   },
   {
     "id": "SC200-RECON-008",

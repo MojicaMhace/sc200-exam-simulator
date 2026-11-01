@@ -174,3 +174,13 @@ test('playable feedback contains substantive explanations without placeholders',
   assert.ok(feedback.body.feedback.decisiveClue);
   assert.equal(Object.keys(feedback.body.feedback.optionFeedback).length, 4);
 });
+
+test('reconstructed KQL question has a complete prompt separate from its scenario', async () => {
+  const questions = await request('/api/questions?includeAnswers=true');
+  const question = questions.body.questions.find((item) => item.id === 'SC200-RECON-007');
+  assert.ok(question);
+  assert.match(question.question, /^Which operator sequence correctly completes/);
+  assert.notEqual(question.question, question.scenario);
+  assert.deepEqual(question.validatedAnswer, ['A']);
+  assert.ok(question.learnReferences.length >= 2);
+});
