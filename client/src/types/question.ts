@@ -45,6 +45,9 @@ export interface Question {
   originalAnswer?: string
   validatedAnswer?: string[]
   subtopic?: string
+  sourceType?: string
+  difficulty?: string
+  scenarioFamily?: string
   learnReferences?: string[]
   validationStatus: string
   sourceReviewDate?: string

@@ -244,7 +244,7 @@ function App() {
           <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="mb-2 text-base font-semibold">Imported Questions</h2>
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Loaded: {questions.length} authored questions. The simulator uses an SC-200-style blueprint: environment management, incident response, and threat hunting, followed by case-study practice.
+              Loaded: {diagnostics?.database.imported ?? questions.filter((question) => question.sourceType === 'Imported').length} imported dump questions and {diagnostics?.database.authored ?? questions.filter((question) => question.sourceType !== 'Imported').length} newly authored questions. Imported dump questions are marked on every question card.
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">

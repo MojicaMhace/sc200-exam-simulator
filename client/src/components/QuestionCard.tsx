@@ -289,6 +289,14 @@ export function QuestionCard({ question, onAnswer, currentAnswer, submittedAnswe
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-3 flex flex-wrap gap-2 text-xs">
+        <span className={`rounded-full px-2 py-1 font-semibold ${question.sourceType === 'Imported' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200' : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200'}`}>
+          {question.sourceType === 'Imported' ? 'Imported dump' : 'Newly authored'}
+        </span>
+        <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          {question.difficulty || 'validated'}
+        </span>
+      </div>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{question.scenario}</p>
       {question.questionType !== 'case_study' && (
         <p className="mt-3 font-medium text-slate-800 dark:text-slate-100">{question.question}</p>
