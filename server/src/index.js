@@ -109,7 +109,7 @@ async function main() {
     const answers = parsed.data;
     const session = await db.get('SELECT total_questions, question_ids_json, mode FROM exam_sessions WHERE id = ?', [sessionId]);
     if (!session) {
-      return res.status(404).json({ error: 'Exam session not found' });
+      return res.status(404).json({ error: 'Exam session not found. It may have expired after a server restart; start a new exam.' });
     }
     const sessionQuestionIds = new Set(JSON.parse(session.question_ids_json || '[]'));
     const submittedQuestionIds = new Set();
@@ -150,7 +150,7 @@ async function main() {
     if (!parsed.success) return res.status(400).json({ error: 'Invalid answer payload' });
 
     const session = await db.get('SELECT mode, question_ids_json FROM exam_sessions WHERE id = ?', [sessionId]);
-    if (!session) return res.status(404).json({ error: 'Exam session not found' });
+    if (!session) return res.status(404).json({ error: 'Exam session not found. It may have expired after a server restart; start a new exam.' });
     if (session.mode !== 'Practice') return res.status(403).json({ error: 'Immediate feedback is only available in Practice Mode' });
     if (!JSON.parse(session.question_ids_json || '[]').includes(parsed.data.questionId)) {
       return res.status(400).json({ error: 'Question is not part of this exam session' });

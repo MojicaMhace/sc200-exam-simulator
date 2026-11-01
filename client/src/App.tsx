@@ -142,7 +142,14 @@ function App() {
         body: JSON.stringify({ answers: payload }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || `Submit service returned ${res.status}`)
+      if (!res.ok) {
+        if (res.status === 404) {
+          setSessionId(null)
+          setScreen('home')
+          throw new Error('This exam session expired, usually because the server restarted. Please start a new exam.')
+        }
+        throw new Error(data.error || `Submit service returned ${res.status}`)
+      }
       setResult(data)
       setScreen('results')
       loadSummary()
@@ -163,7 +170,14 @@ function App() {
         body: JSON.stringify({ questionId: activeItem.question.id, answer: answers[activeItem.instanceId] }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || `Answer service returned ${res.status}`)
+      if (!res.ok) {
+        if (res.status === 404) {
+          setSessionId(null)
+          setScreen('home')
+          throw new Error('This exam session expired, usually because the server restarted. Please start a new exam.')
+        }
+        throw new Error(data.error || `Answer service returned ${res.status}`)
+      }
       setSubmittedAnswers((previous) => ({ ...previous, [activeItem.instanceId]: answers[activeItem.instanceId] }))
       setFeedback((previous) => ({ ...previous, [activeItem.instanceId]: data.feedback }))
     } catch (error) {
@@ -198,7 +212,7 @@ function App() {
         </div>
         {errorMessage && (
           <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100">
-            Unable to start the exam: {errorMessage}
+            {errorMessage}
           </div>
         )}
 
