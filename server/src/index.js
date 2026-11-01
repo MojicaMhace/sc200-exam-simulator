@@ -6,6 +6,7 @@ const { initDb } = require('./db');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
+const BUILD_COMMIT = process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'development';
 
 const answerSchema = z.object({
   questionId: z.string(),
@@ -23,7 +24,7 @@ async function main() {
   app.use(express.static(clientDist));
 
   app.get('/api/health', (_, res) => {
-    res.json({ ok: true, apiVersion: '2026-11-01-balanced-selection' });
+    res.json({ ok: true, apiVersion: '2026-11-01-balanced-selection', buildCommit: BUILD_COMMIT });
   });
 
   app.get('/api/diagnostics', async (_, res) => {
@@ -120,9 +121,13 @@ async function main() {
     }, { imported: 0, authored: 0 });
     const allQuestionIds = [...questionIds, ...selectedCases.map((q) => q.id)];
     const pointRows = await db.all(
-      `SELECT id, question_type, validated_answer_json FROM questions WHERE id IN (${allQuestionIds.map(() => '?').join(',')})`,
+      `SELECT id, question_type, validated_answer_json, difficulty, source_type FROM questions WHERE id IN (${allQuestionIds.map(() => '?').join(',')})`,
       allQuestionIds,
     );
+    const actualDifficultyDistribution = pointRows.reduce((counts, row) => {
+      counts[row.difficulty] = (counts[row.difficulty] || 0) + 1;
+      return counts;
+    }, {});
     const totalPoints = questionIds.reduce((sum, id) => {
       const row = pointRows.find((candidate) => candidate.id === id);
       return sum + (row && ['yes_no', 'drag_drop'].includes(row.question_type)
@@ -144,6 +149,7 @@ async function main() {
       sourceDistribution,
       caseStudyDistribution,
       difficulty: requestedDifficulty,
+      actualDifficultyDistribution,
       sourceShortage: selection.sourceShortage || null,
       selectionSeed,
       startedAt,
@@ -348,6 +354,7 @@ async function buildDiagnostics(db) {
   `);
   return {
     apiVersion: '2026-11-01-balanced-selection',
+    buildCommit: BUILD_COMMIT,
     database: { ...counts, ...families, ...recent, ...duplicates, sessions: sessions.sessions },
     difficulty,
     domains,
@@ -510,7 +517,16 @@ function compareAnswer(expected, candidate, questionType) {
   return { correctPoints: expected.includes(String(candidate)) ? 1 : 0, totalPoints: 1 };
 }
 
-main().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  chooseFresh,
+  compareAnswer,
+  selectBlueprintQuestions,
+  seededRandom,
+};

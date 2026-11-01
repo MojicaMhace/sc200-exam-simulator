@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node src/index.js",
     "diagnostics": "node src/diagnostics.js",
-    "test": "node --test"
+    "test": "node --test test"
   },
   "keywords": [],
   "author": "",
