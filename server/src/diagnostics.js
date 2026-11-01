@@ -28,8 +28,8 @@ async function main() {
     jsonCounts,
     sqliteRecords: rows.length,
     playable: playable.length,
-    imported: playable.filter((row) => row.source_type === 'Imported').length,
-    authored: playable.filter((row) => row.source_type !== 'Imported').length,
+    imported: playable.filter((row) => ['Imported', 'Imported dump', 'Reconstructed from supplied dump'].includes(row.source_type)).length,
+    authored: playable.filter((row) => !['Imported', 'Imported dump', 'Reconstructed from supplied dump'].includes(row.source_type)).length,
     uniqueQuestionIds: new Set(rows.map((row) => row.id)).size,
     uniqueScenarioFamilies: new Set(playable.map((row) => row.scenario_family)).size,
     duplicateScenarioTexts: countDuplicateScenarioTexts(playable),
@@ -37,6 +37,7 @@ async function main() {
     domains: groupBy(playable, 'domain'),
     importedDumpArchive: rows.filter((row) => row.source_type === 'Imported dump').length,
     importedDumpPlayable: playable.filter((row) => row.source_type === 'Imported dump').length,
+    reconstructedDumpPlayable: playable.filter((row) => row.source_type === 'Reconstructed from supplied dump').length,
   };
   const attempts = await db.get('SELECT COUNT(DISTINCT question_id) AS recentlyAttempted FROM exam_answers WHERE id > COALESCE((SELECT MAX(id) - 200 FROM exam_answers), 0)');
   result.recentlyAttempted = attempts.recentlyAttempted;
