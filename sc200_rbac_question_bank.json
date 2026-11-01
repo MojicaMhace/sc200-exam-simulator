@@ -1,0 +1,262 @@
+[
+  {
+    "id": "SC200-RBAC-001",
+    "sequence": 12001,
+    "title": "Sentinel Playbook Scope",
+    "domain": "Manage a security operations environment",
+    "questionType": "multiple_choice",
+    "scenario": "An L1 analyst can view and assign Microsoft Sentinel incidents in workspace SOC-WS. An existing incident-response playbook is deployed in resource group SOC-Automation, while the workspace is in SOC-Monitoring. The analyst can query logs but receives an authorization error when manually running the playbook. You must grant the minimum additional access without granting subscription-wide ownership.",
+    "question": "Which assignment best addresses the failure?",
+    "options": [
+      { "key": "A", "text": "Assign Microsoft Sentinel Responder on SOC-WS only", "explanation": "Responder supports incident work in the workspace, but a workspace assignment does not automatically grant access to a Logic App in another resource group." },
+      { "key": "B", "text": "Assign Microsoft Sentinel Playbook Operator on the playbook resource or resource group, while keeping the existing workspace role", "explanation": "Playbook execution requires the playbook operator permission at a scope containing the Logic App; the existing workspace permission remains separate." },
+      { "key": "C", "text": "Assign Azure Owner at the subscription scope", "explanation": "Owner would work but grants far more privilege than required and violates least privilege." },
+      { "key": "D", "text": "Assign Microsoft Sentinel Reader on SOC-Automation", "explanation": "Reader access does not provide the permission to invoke the playbook." }
+    ],
+    "validatedAnswer": ["B"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Sentinel Playbook Operator and scope",
+    "scenarioFamily": "RBAC Sentinel playbook scope",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/azure/sentinel/roles"]
+  },
+  {
+    "id": "SC200-RBAC-002",
+    "sequence": 12002,
+    "title": "Defender Remediation Approval",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "A Defender XDR analyst can investigate alerts and collect an investigation package. A pending remediation action is waiting for approval, but the Approve action is unavailable. The analyst is already scoped to the affected device group.",
+    "question": "Which missing unified RBAC permission is the most direct explanation?",
+    "options": [
+      { "key": "A", "text": "Alerts (Manage)", "explanation": "Alerts (Manage) supports alert management and investigation activities, but approval of pending remediation is a response action." },
+      { "key": "B", "text": "Response (Manage)", "explanation": "Response (Manage) covers response actions such as approving or dismissing pending remediation actions, subject to device-group scope." },
+      { "key": "C", "text": "Security data basics (Read)", "explanation": "Read access allows visibility into security data but cannot authorize a remediation decision." },
+      { "key": "D", "text": "Basic Live Response (Manage)", "explanation": "Live Response permissions control remote sessions and commands; they do not grant approval of a pending remediation action." }
+    ],
+    "validatedAnswer": ["B"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Defender Response Manage",
+    "scenarioFamily": "RBAC Defender remediation approval",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"]
+  },
+  {
+    "id": "SC200-RBAC-003",
+    "sequence": 12003,
+    "title": "Advanced Live Response",
+    "domain": "Respond to security incidents",
+    "questionType": "single_choice",
+    "scenario": "An endpoint analyst can open a Microsoft Defender Live Response session and run read-only commands. The analyst must upload a remediation script and execute it on devices in the approved device group. The analyst must not receive tenant-wide security administration rights.",
+    "question": "Which additional capability is required?",
+    "options": [
+      { "key": "A", "text": "Security data basics (Read)", "explanation": "This provides visibility, not the ability to upload and execute remediation content." },
+      { "key": "B", "text": "Basic Live Response (Manage)", "explanation": "Basic Live Response supports sessions and read-only actions, but it does not provide advanced script execution." },
+      { "key": "C", "text": "Advanced Live Response (Manage), scoped to the required device group", "explanation": "Advanced Live Response is the capability for uploading files and running scripts, and device-group scope limits the impact." },
+      { "key": "D", "text": "Microsoft Sentinel Playbook Operator", "explanation": "Playbook Operator controls Sentinel Logic App invocation; it does not grant Defender endpoint Live Response capabilities." }
+    ],
+    "validatedAnswer": ["C"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Defender Advanced Live Response",
+    "scenarioFamily": "RBAC Defender live response",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/defender-endpoint/live-response", "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"]
+  },
+  {
+    "id": "SC200-RBAC-004",
+    "sequence": 12004,
+    "title": "Sentinel Analytics Rule Authoring",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A security engineer can read Sentinel incidents and run KQL queries against the Log Analytics workspace. The engineer must create and edit scheduled analytics rules in one Sentinel workspace, but must not manage Azure resources or grant access.",
+    "question": "Which least-privilege assignment is the best fit at the workspace scope?",
+    "options": [
+      { "key": "A", "text": "Microsoft Sentinel Reader", "explanation": "Reader is suitable for viewing Sentinel content but does not meet the requirement to create or edit analytics rules." },
+      { "key": "B", "text": "Microsoft Sentinel Responder", "explanation": "Responder supports incident response actions, but rule authoring requires the contributor-level Sentinel management permissions." },
+      { "key": "C", "text": "Microsoft Sentinel Contributor", "explanation": "Contributor is the Sentinel role intended for managing Sentinel resources such as analytics rules without making the user an Azure subscription owner." },
+      { "key": "D", "text": "Global Administrator", "explanation": "This Entra role is much broader than required and does not represent least privilege for a workspace resource." }
+    ],
+    "validatedAnswer": ["C"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Sentinel Contributor and analytics rules",
+    "scenarioFamily": "RBAC Sentinel analytics authoring",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/azure/sentinel/roles"]
+  },
+  {
+    "id": "SC200-RBAC-005",
+    "sequence": 12005,
+    "title": "Automation Identity Permissions",
+    "domain": "Manage a security operations environment",
+    "questionType": "multiple_choice",
+    "scenario": "A Sentinel automation rule invokes a Logic App playbook when a high-severity incident is created. The analyst who configures the automation can test the rule, but the run fails because the playbook's managed identity cannot update the incident and cannot access a downstream Key Vault secret.",
+    "question": "Which permissions should be investigated and granted at the narrowest applicable scopes?",
+    "options": [
+      { "key": "A", "text": "A Sentinel automation or playbook permission for the configuring identity, plus the required Logic App and downstream resource permissions for the managed identity", "explanation": "The human configuration permission and the runtime identity permission are separate authorization paths; both must be valid." },
+      { "key": "B", "text": "Microsoft Sentinel Reader for the managed identity only", "explanation": "Reader does not authorize incident updates or access to a protected secret." },
+      { "key": "C", "text": "Global Administrator for the analyst", "explanation": "A tenant-wide Entra administrator role is excessive and does not replace resource permissions for the managed identity." },
+      { "key": "D", "text": "Owner on the entire subscription for the playbook", "explanation": "Subscription Owner is excessive; the identity should receive only the permissions needed by the playbook actions." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Sentinel automation identity",
+    "scenarioFamily": "RBAC playbook managed identity",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/azure/sentinel/automation/automation-rules", "https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-securing-a-logic-app"]
+  },
+  {
+    "id": "SC200-RBAC-006",
+    "sequence": 12006,
+    "title": "Azure and Entra Scope Separation",
+    "domain": "Manage a security operations environment",
+    "questionType": "yes_no",
+    "scenario": "A security engineer has Security Reader in Microsoft Entra ID and Log Analytics Reader on workspace SOC-WS. The engineer needs to edit an Azure diagnostic setting on a storage account in resource group RG-Data and then verify the resulting logs in SOC-WS.",
+    "question": "Evaluate each proposed solution.",
+    "options": [
+      { "key": "YES", "text": "Assign the minimum Azure resource permission on the storage account or RG-Data for diagnostic-setting changes, while retaining Log Analytics Reader for verification." },
+      { "key": "NO", "text": "Security Reader in Entra ID automatically grants permission to edit Azure diagnostic settings." },
+      { "key": "NO", "text": "Log Analytics Reader on SOC-WS automatically grants permission to edit a diagnostic setting on a storage account in RG-Data." }
+    ],
+    "statements": [
+      { "id": "rbac-6-1", "text": "Assign the minimum Azure resource permission on the storage account or RG-Data for diagnostic-setting changes, while retaining Log Analytics Reader for verification." },
+      { "id": "rbac-6-2", "text": "Security Reader in Entra ID automatically grants permission to edit Azure diagnostic settings." },
+      { "id": "rbac-6-3", "text": "Log Analytics Reader on SOC-WS automatically grants permission to edit a diagnostic setting on a storage account in RG-Data." }
+    ],
+    "validatedAnswer": ["YES", "NO", "NO"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Azure RBAC versus Entra RBAC",
+    "scenarioFamily": "RBAC cross-service scope",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/azure/role-based-access-control/overview", "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/overview"]
+  },
+  {
+    "id": "SC200-RBAC-007",
+    "sequence": 12007,
+    "title": "Cumulative Role Assignments",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "An analyst has Microsoft Sentinel Reader at the workspace scope and Microsoft Sentinel Responder at the resource-group scope that contains the workspace. The analyst can view incidents and perform response actions, but cannot create or edit analytics rules.",
+    "question": "What is the best explanation?",
+    "options": [
+      { "key": "A", "text": "The effective permissions are cumulative, but neither assignment provides the contributor-level rule-authoring permission", "explanation": "Azure role assignments at applicable scopes combine, but cumulative Reader and Responder access still does not become Contributor." },
+      { "key": "B", "text": "The Reader assignment cancels the Responder assignment", "explanation": "Azure RBAC assignments are not denied by a lower role; applicable permissions accumulate unless a separate deny assignment applies." },
+      { "key": "C", "text": "Responder always includes analytics-rule authoring", "explanation": "Responder is not equivalent to Sentinel Contributor for managing analytics rules." },
+      { "key": "D", "text": "The analyst needs Global Administrator instead", "explanation": "A tenant-wide Entra role is not the least-privilege fix for a Sentinel workspace permission gap." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Cumulative Azure RBAC",
+    "scenarioFamily": "RBAC cumulative assignments",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/azure/role-based-access-control/overview"]
+  },
+  {
+    "id": "SC200-RBAC-008",
+    "sequence": 12008,
+    "title": "Defender Role Scope",
+    "domain": "Respond to security incidents",
+    "questionType": "drag_drop",
+    "scenario": "A security team separates responsibilities across a Defender device group. L1 investigates alerts, L2 approves remediation, and a specialist uploads scripts only during approved maintenance. Assign the minimum unified RBAC capability to each duty.",
+    "question": "Place each capability in the required role-assignment order.",
+    "options": [
+      { "key": "A", "text": "Alerts (Manage) scoped to the device group" },
+      { "key": "B", "text": "Response (Manage) scoped to the device group" },
+      { "key": "C", "text": "Advanced Live Response (Manage) scoped to the device group" }
+    ],
+    "answerSlots": [
+      { "id": "slot-1", "label": "L1 alert investigation" },
+      { "id": "slot-2", "label": "L2 remediation approval" },
+      { "id": "slot-3", "label": "Approved script execution" }
+    ],
+    "validatedAnswer": ["A", "B", "C"],
+    "validationStatus": "Verified — RBAC scenario",
+    "sourceType": "Original authored",
+    "subtopic": "Defender unified RBAC scope",
+    "scenarioFamily": "RBAC Defender duty separation",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"]
+  },
+  {
+    "id": "SC200-RBAC-CASE-001",
+    "sequence": 12009,
+    "title": "Case Study: Three-Tier SOC Permissions",
+    "domain": "Manage a security operations environment",
+    "questionType": "case_study",
+    "scenario": "A company has three SOC teams. L1 analysts investigate and assign Microsoft Sentinel incidents in workspace SOC-WS. L2 analysts perform Defender containment and approve remediation in device group Finance. Security engineers manage Sentinel analytics rules and automation in resource group SOC-Automation. A dedicated managed identity runs playbooks. The workspace is in RG-SOC, while the playbooks are in RG-Automation. Existing assignments are intentionally limited to their listed scopes.",
+    "question": "Use the role assignments and resource scopes to choose the least-privilege design.",
+    "options": [
+      { "key": "A", "text": "L1: Sentinel Responder on SOC-WS" },
+      { "key": "B", "text": "L2: Defender Response (Manage) scoped to Finance" },
+      { "key": "C", "text": "Security engineers: Sentinel Contributor on SOC-WS and the required automation permissions on RG-Automation" },
+      { "key": "D", "text": "The playbook managed identity: only Sentinel Reader on SOC-WS" }
+    ],
+    "validatedAnswer": ["A", "B", "C", "D"],
+    "validationStatus": "Verified — RBAC case study",
+    "sourceType": "Original authored",
+    "subtopic": "RBAC case study",
+    "scenarioFamily": "RBAC three-tier SOC",
+    "difficulty": "advanced",
+    "learnReferences": ["https://learn.microsoft.com/en-us/azure/sentinel/roles", "https://learn.microsoft.com/en-us/defender-xdr/custom-permissions-details"],
+    "interaction": {
+      "caseQuestions": [
+        {
+          "id": "rbac-case-q1",
+          "question": "Which role best fits L1 analysts who investigate and assign incidents without authoring analytics rules?",
+          "options": [
+            { "key": "A", "text": "Microsoft Sentinel Responder", "explanation": "Responder supports incident response work while avoiding the broader management rights of Contributor." },
+            { "key": "B", "text": "Microsoft Sentinel Reader only", "explanation": "Reader is insufficient for incident response actions such as assigning or updating incidents." },
+            { "key": "C", "text": "Subscription Owner", "explanation": "Owner is excessive and violates least privilege." },
+            { "key": "D", "text": "Global Administrator", "explanation": "This is an Entra tenant role and is far broader than the workspace task." }
+          ]
+        },
+        {
+          "id": "rbac-case-q2",
+          "question": "Why can an analyst view an incident but fail to execute a playbook in RG-Automation?",
+          "options": [
+            { "key": "A", "text": "The workspace incident permission does not automatically grant Logic App execution permission in another resource group.", "explanation": "The playbook is a separate Azure resource with its own scope and permissions." },
+            { "key": "B", "text": "Incidents cannot invoke playbooks.", "explanation": "Sentinel incidents can invoke playbooks when automation and permissions are configured." },
+            { "key": "C", "text": "Reader always blocks incident viewing.", "explanation": "Reader can permit viewing; it is not the explanation for this scope mismatch." },
+            { "key": "D", "text": "The analyst needs an Entra Global Administrator role.", "explanation": "A tenant-wide role is not the least-privilege remedy." }
+          ]
+        },
+        {
+          "id": "rbac-case-q3",
+          "question": "Which Defender permission enables L2 approval of pending remediation actions?",
+          "options": [
+            { "key": "A", "text": "Alerts (Manage)", "explanation": "Alerts management is not the response approval capability." },
+            { "key": "B", "text": "Response (Manage)", "explanation": "Response management covers the approval or dismissal of pending remediation actions." },
+            { "key": "C", "text": "Security data basics (Read)", "explanation": "Read access cannot approve a response action." },
+            { "key": "D", "text": "Basic Live Response (Manage)", "explanation": "Basic Live Response controls remote read-only interaction, not remediation approval." }
+          ]
+        },
+        {
+          "id": "rbac-case-q4",
+          "question": "Which assignment allows security engineers to modify Sentinel analytics rules while limiting Azure permissions?",
+          "options": [
+            { "key": "A", "text": "Microsoft Sentinel Contributor at the workspace scope", "explanation": "Contributor is the appropriate Sentinel management role for analytics rules at the workspace." },
+            { "key": "B", "text": "Microsoft Sentinel Reader at the subscription scope", "explanation": "Reader cannot modify rules and subscription scope is unnecessary." },
+            { "key": "C", "text": "Security Reader in Entra ID", "explanation": "Entra Security Reader does not replace Azure resource permissions for Sentinel rule authoring." },
+            { "key": "D", "text": "Log Analytics Reader only", "explanation": "Query access does not grant Sentinel analytics-rule management." }
+          ]
+        },
+        {
+          "id": "rbac-case-q5",
+          "question": "Which identity must be authorized for an automated playbook run?",
+          "options": [
+            { "key": "A", "text": "The playbook managed identity, with only the permissions required by its actions", "explanation": "The runtime identity performs the Logic App actions and must access each downstream resource it uses." },
+            { "key": "B", "text": "Every L1 analyst", "explanation": "Human analysts do not need to be granted all runtime permissions for an automated identity." },
+            { "key": "C", "text": "The workbook reader", "explanation": "Workbook access does not authorize Logic App actions." },
+            { "key": "D", "text": "All users in the tenant", "explanation": "Tenant-wide access violates least privilege." }
+          ]
+        }
+      ]
+    }
+  }
+]

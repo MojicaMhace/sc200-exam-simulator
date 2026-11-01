@@ -6,6 +6,7 @@ import { AnalyticsPanel } from './components/AnalyticsPanel'
 
 type Screen = 'home' | 'exam' | 'results'
 type PracticeMode = 'exam' | 'practice'
+type Difficulty = 'all' | 'advanced' | 'expert'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -42,6 +43,8 @@ function App() {
   const [submittingExam, setSubmittingExam] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [practiceMode, setPracticeMode] = useState<PracticeMode>('exam')
+  const [difficulty, setDifficulty] = useState<Difficulty>('all')
+  const [diagnostics, setDiagnostics] = useState<{ apiVersion: string; database: { playable: number; imported: number; authored: number; uniqueScenarioFamilies: number } } | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -51,6 +54,7 @@ function App() {
   useEffect(() => {
     loadQuestions()
     loadSummary()
+    fetch(`${API_BASE_URL}/api/diagnostics`).then((res) => res.ok ? res.json() : null).then((data) => data && setDiagnostics(data)).catch(() => undefined)
   }, [])
 
   async function loadQuestions(includeAnswers = false): Promise<Question[]> {
@@ -82,7 +86,7 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/api/exam/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Practice', totalQuestions: 50 }),
+        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Practice', totalQuestions: 50, difficulty }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || `Exam service returned ${res.status}`)
@@ -209,6 +213,18 @@ function App() {
               Start Exam Simulation Mode
             </button>
           </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-semibold">Difficulty:</span>
+            {(['all', 'advanced', 'expert'] as Difficulty[]).map((level) => (
+              <button
+                key={level}
+                onClick={() => setDifficulty(level)}
+                className={`rounded-md border px-3 py-1 ${difficulty === level ? 'border-white bg-white text-sky-700' : 'border-white/60 text-white'}`}
+              >
+                {level === 'all' ? 'All validated' : level[0].toUpperCase() + level.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
         {errorMessage && (
           <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100">
@@ -236,6 +252,12 @@ function App() {
         </div>
 
         {summary && <AnalyticsPanel rows={summary.byDomain} />}
+        {diagnostics && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs dark:border-slate-800 dark:bg-slate-900">
+            <p className="font-semibold">Developer diagnostics</p>
+            <p>API: {diagnostics.apiVersion} · Playable: {diagnostics.database.playable} · Imported: {diagnostics.database.imported} · Authored: {diagnostics.database.authored} · Scenario families: {diagnostics.database.uniqueScenarioFamilies}</p>
+          </div>
+        )}
       </div>
     )
   }

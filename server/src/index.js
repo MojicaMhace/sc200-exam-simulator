@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const { z } = require('zod');
 const { initDb } = require('./db');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
@@ -22,15 +23,28 @@ async function main() {
   app.use(express.static(clientDist));
 
   app.get('/api/health', (_, res) => {
-    res.json({ ok: true });
+    res.json({ ok: true, apiVersion: '2026-11-01-balanced-selection' });
+  });
+
+  app.get('/api/diagnostics', async (_, res) => {
+    res.json(await buildDiagnostics(db));
   });
 
   app.get('/api/questions', async (req, res) => {
     const domain = req.query.domain;
     const includeAnswers = req.query.includeAnswers === 'true';
-    const rows = domain
-      ? await db.all('SELECT * FROM questions WHERE domain = ? ORDER BY sequence ASC', [domain])
-      : await db.all('SELECT * FROM questions ORDER BY sequence ASC');
+    const difficulty = typeof req.query.difficulty === 'string' ? req.query.difficulty : 'all';
+    const filters = ['active = 1'];
+    const params = [];
+    if (domain) {
+      filters.push('domain = ?');
+      params.push(domain);
+    }
+    if (difficulty !== 'all') {
+      filters.push('difficulty = ?');
+      params.push(difficulty);
+    }
+    const rows = await db.all(`SELECT * FROM questions WHERE ${filters.join(' AND ')} ORDER BY sequence ASC`, params);
 
     const questions = rows.map((r) => ({
       id: r.id,
@@ -40,16 +54,17 @@ async function main() {
       questionType: r.question_type,
       scenario: r.scenario,
       question: r.question,
-      options: JSON.parse(r.options_json),
+      options: shuffle(JSON.parse(r.options_json)),
       sourceType: r.source_type,
       subtopic: r.subtopic,
       difficulty: r.difficulty,
+      scenarioFamily: r.scenario_family,
       learnReferences: JSON.parse(r.learn_references_json || '[]'),
       ...(includeAnswers ? {
         originalAnswer: r.original_answer,
         validatedAnswer: JSON.parse(r.validated_answer_json || '[]'),
       } : {}),
-      ...(r.interaction_json ? JSON.parse(r.interaction_json) : {}),
+      ...(r.interaction_json ? shuffleInteraction(JSON.parse(r.interaction_json)) : {}),
       validationStatus: r.validation_status,
       sourceReviewDate: r.source_review_date,
     }));
@@ -59,13 +74,14 @@ async function main() {
 
   app.post('/api/exam/start', async (req, res) => {
     const mode = typeof req.body?.mode === 'string' ? req.body.mode : 'Practice';
+    const requestedDifficulty = ['all', 'advanced', 'expert'].includes(req.body?.difficulty) ? req.body.difficulty : 'all';
     const requestedTotal = Number(req.body?.totalQuestions || 50);
     const total = Number.isFinite(requestedTotal) && requestedTotal > 0 ? Math.floor(requestedTotal) : 50;
     const standardQuestions = await db.all(
-      "SELECT id, domain, source_type, validation_status, validated_answer_json FROM questions WHERE question_type != 'case_study' AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'",
+      "SELECT id, domain, source_type, validation_status, validated_answer_json, difficulty, scenario_family FROM questions WHERE question_type != 'case_study' AND active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'",
     );
     const caseQuestions = await db.all(
-      "SELECT id, source_type, validated_answer_json FROM questions WHERE question_type = 'case_study' ORDER BY sequence ASC",
+      "SELECT id, source_type, validated_answer_json, difficulty, scenario_family FROM questions WHERE question_type = 'case_study' AND active = 1 ORDER BY sequence ASC",
     );
     if (standardQuestions.length === 0) {
       return res.status(503).json({ error: 'No standard questions are available' });
@@ -74,6 +90,8 @@ async function main() {
     const recentRows = await db.all(
       'SELECT question_ids_json FROM exam_sessions ORDER BY id DESC LIMIT 10',
     );
+    const selectionSeed = crypto.randomBytes(16).toString('hex');
+    const random = seededRandom(selectionSeed);
     const answeredRows = await db.all(
       'SELECT question_id FROM exam_answers ORDER BY id DESC LIMIT 200',
     );
@@ -83,17 +101,21 @@ async function main() {
     ].flat());
     let selection;
     try {
-      selection = selectBlueprintQuestions(standardQuestions, total, recentlySeen);
+      selection = selectBlueprintQuestions(standardQuestions, total, recentlySeen, requestedDifficulty, random);
     } catch (error) {
       return res.status(409).json({ error: error.message });
     }
     const { questionIds, sourceDistribution } = selection;
-    const caseStudyDistribution = caseQuestions.reduce((counts, question) => {
+    const recentCaseIds = new Set(
+      recentRows.flatMap((row) => JSON.parse(row.question_ids_json || '[]')),
+    );
+    const selectedCases = chooseFresh(caseQuestions, Math.min(1, caseQuestions.length), recentCaseIds, random);
+    const caseStudyDistribution = selectedCases.reduce((counts, question) => {
       const key = question.source_type === 'Imported' ? 'imported' : 'authored';
       counts[key] += 1;
       return counts;
     }, { imported: 0, authored: 0 });
-    const allQuestionIds = [...questionIds, ...caseQuestions.map((q) => q.id)];
+    const allQuestionIds = [...questionIds, ...selectedCases.map((q) => q.id)];
     const pointRows = await db.all(
       `SELECT id, question_type, validated_answer_json FROM questions WHERE id IN (${allQuestionIds.map(() => '?').join(',')})`,
       allQuestionIds,
@@ -103,21 +125,23 @@ async function main() {
       return sum + (row && ['yes_no', 'drag_drop'].includes(row.question_type)
         ? JSON.parse(row.validated_answer_json || '[]').length
         : 1);
-    }, caseQuestions.reduce((sum, row) => sum + JSON.parse(row.validated_answer_json || '[]').length, 0));
+    }, selectedCases.reduce((sum, row) => sum + JSON.parse(row.validated_answer_json || '[]').length, 0));
 
     const startedAt = new Date().toISOString();
     const result = await db.run(
-      'INSERT INTO exam_sessions (started_at, mode, total_questions, question_ids_json) VALUES (?, ?, ?, ?)',
-      [startedAt, mode, totalPoints, JSON.stringify(allQuestionIds)],
+      'INSERT INTO exam_sessions (started_at, mode, total_questions, question_ids_json, selection_seed, requested_difficulty) VALUES (?, ?, ?, ?, ?, ?)',
+      [startedAt, mode, totalPoints, JSON.stringify(allQuestionIds), selectionSeed, requestedDifficulty],
     );
 
     res.json({
       sessionId: result.lastID,
       questionIds,
-      caseQuestionIds: caseQuestions.map((q) => q.id),
+      caseQuestionIds: selectedCases.map((q) => q.id),
       totalQuestions: questionIds.length,
       sourceDistribution,
       caseStudyDistribution,
+      difficulty: requestedDifficulty,
+      selectionSeed,
       startedAt,
     });
   });
@@ -251,22 +275,23 @@ async function main() {
   });
 }
 
-function selectBlueprintQuestions(questions, total, recentlySeen = new Set()) {
+function selectBlueprintQuestions(questions, total, recentlySeen = new Set(), requestedDifficulty = 'all', random = Math.random) {
+  const eligible = questions.filter((question) => requestedDifficulty === 'all' || question.difficulty === requestedDifficulty);
   const importedCount = Math.floor(total / 2);
   const authoredCount = total - importedCount;
-  const imported = questions.filter((question) => question.source_type === 'Imported');
-  const authored = questions.filter((question) => question.source_type !== 'Imported');
+  const imported = eligible.filter((question) => question.source_type === 'Imported');
+  const authored = eligible.filter((question) => question.source_type !== 'Imported');
 
   if (imported.length < importedCount || authored.length < authoredCount) {
     throw new Error(
-      `The requested ${total}-question exam needs ${importedCount} imported and ${authoredCount} newly authored validated questions, ` +
-      `but only ${imported.length} imported and ${authored.length} newly authored questions are available.`,
+      `The requested ${total}-question ${requestedDifficulty} exam needs ${importedCount} imported and ${authoredCount} newly authored validated questions, ` +
+      `but only ${imported.length} imported and ${authored.length} newly authored ${requestedDifficulty} questions are available.`,
     );
   }
 
-  const selectedImported = chooseFresh(imported, importedCount, recentlySeen);
-  const selectedAuthored = chooseFresh(authored, authoredCount, recentlySeen);
-  const selected = shuffle([...selectedImported, ...selectedAuthored]);
+  const selectedImported = chooseFresh(imported, importedCount, recentlySeen, random);
+  const selectedAuthored = chooseFresh(authored, authoredCount, recentlySeen, random);
+  const selected = shuffle([...selectedImported, ...selectedAuthored], random);
   return {
     questionIds: selected.map((question) => question.id),
     sourceDistribution: {
@@ -277,19 +302,85 @@ function selectBlueprintQuestions(questions, total, recentlySeen = new Set()) {
   };
 }
 
-function chooseFresh(pool, count, recentlySeen) {
-  return shuffle(pool)
-    .sort((left, right) => Number(recentlySeen.has(left.id)) - Number(recentlySeen.has(right.id)))
-    .slice(0, count);
+async function buildDiagnostics(db) {
+  const counts = await db.get(`
+    SELECT COUNT(*) AS sqliteRecords,
+      SUM(CASE WHEN active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS playable,
+      SUM(CASE WHEN source_type = 'Imported' AND active = 1 AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS imported,
+      SUM(CASE WHEN source_type != 'Imported' AND active = 1 AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS authored
+    FROM questions
+  `);
+  const difficulty = await db.all('SELECT difficulty, COUNT(*) AS count FROM questions WHERE active = 1 GROUP BY difficulty');
+  const domains = await db.all("SELECT domain, COUNT(*) AS count FROM questions WHERE active = 1 AND validated_answer_json != '[]' GROUP BY domain");
+  const rbac = await db.get("SELECT COUNT(*) AS count FROM questions WHERE active = 1 AND scenario_family LIKE 'RBAC%'");
+  const rbacDifficulty = await db.all("SELECT difficulty, COUNT(*) AS count FROM questions WHERE active = 1 AND scenario_family LIKE 'RBAC%' GROUP BY difficulty");
+  const families = await db.get('SELECT COUNT(DISTINCT scenario_family) AS uniqueScenarioFamilies FROM questions WHERE active = 1');
+  const recent = await db.get('SELECT COUNT(DISTINCT question_id) AS recentlyAttempted FROM exam_answers WHERE id > COALESCE((SELECT MAX(id) - 200 FROM exam_answers), 0)');
+  const duplicates = await db.get('SELECT COUNT(*) - COUNT(DISTINCT scenario_family) AS duplicateScenarioRecords FROM questions WHERE active = 1');
+  const sessions = await db.get('SELECT COUNT(*) AS sessions FROM exam_sessions');
+  return {
+    apiVersion: '2026-11-01-balanced-selection',
+    database: { ...counts, uniqueQuestionIds: counts.sqliteRecords, ...families, ...recent, ...duplicates, sessions: sessions.sessions },
+    difficulty,
+    domains,
+    rbac: { count: rbac.count, difficulty: rbacDifficulty },
+  };
 }
 
-function shuffle(values) {
+function chooseFresh(pool, count, recentlySeen, random = Math.random) {
+  const selected = [];
+  const families = new Set();
+  const ordered = shuffle(pool, random).sort(
+    (left, right) => Number(recentlySeen.has(left.id)) - Number(recentlySeen.has(right.id)),
+  );
+  for (const question of ordered) {
+    if (selected.length >= count) break;
+    if (!families.has(question.scenario_family)) {
+      selected.push(question);
+      families.add(question.scenario_family);
+    }
+  }
+  if (selected.length < count) {
+    for (const question of ordered) {
+      if (selected.length >= count) break;
+      if (!selected.some((item) => item.id === question.id)) selected.push(question);
+    }
+  }
+  return selected;
+}
+
+function shuffle(values, random = Math.random) {
   const shuffled = [...values];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const swapIndex = Math.floor(random() * (index + 1));
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
+
   return shuffled;
+}
+
+function seededRandom(seed) {
+  let state = Number.parseInt(seed.slice(0, 8), 16) || 1;
+  return () => {
+    state |= 0;
+    state = (state + 0x6d2b79f5) | 0;
+    let value = Math.imul(state ^ state >>> 15, 1 | state);
+    value = (value + Math.imul(value ^ value >>> 7, 61 | value)) ^ value;
+    return ((value ^ value >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function shuffleInteraction(interaction) {
+  if (!interaction) return interaction;
+  return {
+    ...interaction,
+    ...(interaction.caseQuestions ? {
+      caseQuestions: interaction.caseQuestions.map((caseQuestion) => ({
+        ...caseQuestion,
+        options: shuffle(caseQuestion.options || []),
+      })),
+    } : {}),
+  };
 }
 
 function buildFeedback(question, submittedAnswer, earnedPoints, availablePoints) {

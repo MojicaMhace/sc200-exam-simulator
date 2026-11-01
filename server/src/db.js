@@ -8,6 +8,7 @@ const DB_PATH = path.join(DATA_DIR, 'sc200.db');
 const IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_additional_25_question_bank.json');
 const EXTENDED_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_extended_question_bank.json');
 const SKILL_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_skill_question_bank.json');
+const RBAC_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_rbac_question_bank.json');
 
 async function getDb() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -37,7 +38,9 @@ async function initDb() {
       source_type TEXT NOT NULL DEFAULT 'Imported',
       subtopic TEXT NOT NULL DEFAULT 'General',
       difficulty TEXT NOT NULL DEFAULT 'intermediate',
-      learn_references_json TEXT NOT NULL DEFAULT '[]'
+      learn_references_json TEXT NOT NULL DEFAULT '[]',
+      scenario_family TEXT NOT NULL DEFAULT 'General',
+      active INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS exam_sessions (
@@ -77,6 +80,10 @@ async function initDb() {
     "ALTER TABLE questions ADD COLUMN subtopic TEXT NOT NULL DEFAULT 'General'",
     "ALTER TABLE questions ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'intermediate'",
     "ALTER TABLE questions ADD COLUMN learn_references_json TEXT NOT NULL DEFAULT '[]'",
+    "ALTER TABLE questions ADD COLUMN scenario_family TEXT NOT NULL DEFAULT 'General'",
+    "ALTER TABLE questions ADD COLUMN active INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE exam_sessions ADD COLUMN selection_seed TEXT",
+    "ALTER TABLE exam_sessions ADD COLUMN requested_difficulty TEXT NOT NULL DEFAULT 'all'",
   ]) {
     try {
       await db.exec(statement);
@@ -106,6 +113,7 @@ async function seedQuestionsIfEmpty(db) {
     await seedInteractiveSamples(db);
     await importQuestionFile(db, EXTENDED_IMPORT_PATH);
     await importQuestionFile(db, SKILL_IMPORT_PATH);
+    await importQuestionFile(db, RBAC_IMPORT_PATH);
     return;
   }
 
@@ -118,15 +126,35 @@ async function seedQuestionsIfEmpty(db) {
   await seedInteractiveSamples(db);
   await importQuestionFile(db, EXTENDED_IMPORT_PATH);
   await importQuestionFile(db, SKILL_IMPORT_PATH);
+  await importQuestionFile(db, RBAC_IMPORT_PATH);
 }
 
 async function insertQuestions(db, questions) {
   const insertSql = `
-    INSERT OR IGNORE INTO questions (
+    INSERT INTO questions (
       id, sequence, title, domain, question_type, scenario, question,
       options_json, original_answer, validated_answer_json, validation_status, source_review_date,
-      source_type, subtopic, difficulty, learn_references_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      source_type, subtopic, difficulty, learn_references_json, scenario_family, active, interaction_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      sequence = excluded.sequence,
+      title = excluded.title,
+      domain = excluded.domain,
+      question_type = excluded.question_type,
+      scenario = excluded.scenario,
+      question = excluded.question,
+      options_json = excluded.options_json,
+      original_answer = excluded.original_answer,
+      validated_answer_json = excluded.validated_answer_json,
+      validation_status = excluded.validation_status,
+      source_review_date = excluded.source_review_date,
+      source_type = excluded.source_type,
+      subtopic = excluded.subtopic,
+      difficulty = excluded.difficulty,
+      learn_references_json = excluded.learn_references_json,
+      scenario_family = excluded.scenario_family,
+      active = excluded.active,
+      interaction_json = excluded.interaction_json
   `;
 
   for (const q of questions) {
@@ -147,6 +175,9 @@ async function insertQuestions(db, questions) {
       q.subtopic || inferSubtopic(q),
       q.difficulty || inferDifficulty(q),
       JSON.stringify(q.learnReferences || []),
+      q.scenarioFamily || inferScenarioFamily(q),
+      q.active === false ? 0 : 1,
+      JSON.stringify(q.interaction || null),
     ]);
   }
 
@@ -159,7 +190,7 @@ async function importQuestionFile(db, filePath) {
 }
 
 async function backfillQuestionMetadata(db) {
-  const rows = await db.all('SELECT id, title, scenario, question, subtopic, difficulty FROM questions');
+  const rows = await db.all('SELECT id, title, scenario, question, subtopic, difficulty, scenario_family FROM questions');
   for (const row of rows) {
     const inferredSubtopic = inferSubtopic(row);
     const inferredDifficulty = inferDifficulty(row);
@@ -173,6 +204,7 @@ async function backfillQuestionMetadata(db) {
       await db.run("UPDATE questions SET source_type = 'Original authored' WHERE id = ?", [row.id]);
       await db.run("UPDATE questions SET difficulty = 'advanced' WHERE id = ?", [row.id]);
     }
+    await db.run('UPDATE questions SET scenario_family = ? WHERE id = ? AND scenario_family = ?', [inferScenarioFamily(row), row.id, 'General']);
   }
 }
 
@@ -194,6 +226,18 @@ function inferSubtopic(question) {
 function inferDifficulty(question) {
   const text = `${question.scenario} ${question.question}`.toLowerCase();
   return text.length > 220 || text.includes('which sequence') || text.includes('diagnos') ? 'advanced' : 'intermediate';
+}
+
+function inferScenarioFamily(question) {
+  const text = `${question.title} ${question.scenario} ${question.question}`.toLowerCase();
+  if (text.includes('search job')) return 'Search Jobs';
+  if (text.includes('summary rule')) return 'Summary Rules';
+  if (text.includes('kql') || text.includes('query') || text.includes('join') || text.includes('union')) return 'KQL investigations';
+  if (text.includes('ama') || text.includes('dcr') || text.includes('cef') || text.includes('syslog') || text.includes('connector')) return 'Log collection';
+  if (text.includes('incident') || text.includes('response')) return 'Incident response';
+  if (text.includes('defender xdr') || text.includes('defender')) return 'Defender investigation';
+  if (text.includes('identity') || text.includes('sign-in') || text.includes('oauth')) return 'Identity investigation';
+  return question.title || 'General';
 }
 
 async function seedInteractiveSamples(db) {
@@ -303,6 +347,43 @@ async function seedInteractiveSamples(db) {
       },
     },
   ];
+
+  samples.push(
+    {
+      id: 'SC200-DEMO-CASE-002',
+      sequence: 9004,
+      title: 'Case Study: Hybrid Windows Collection Gap',
+      domain: 'Manage a security operations environment',
+      questionType: 'case_study',
+      scenario: 'Northwind has domain controllers forwarding Windows events through WEF to an Azure Monitor Agent collector. SecurityEvent is empty for one site, while WindowsEvent contains service-health events. A DCR was recently edited and the CEF appliance is in a separate workspace.',
+      question: 'Choose the investigation and remediation actions supported by the evidence.',
+      options: [{ key: 'A', text: 'Inspect the DCR, WEF subscription, and collector health before changing analytics rules' }, { key: 'B', text: 'Assume the empty table proves the domain controllers are clean' }, { key: 'C', text: 'Verify the CEF facility and workspace routing separately' }, { key: 'D', text: 'Replace all collection with a workbook' }],
+      validatedAnswer: ['A', 'B', 'C', 'A'],
+      interaction: { caseQuestions: [
+        { id: 'case2-q1', question: 'What should be checked first?', options: [{ key: 'A', text: 'The DCR association, WEF subscription, and collector health' }, { key: 'B', text: 'The workbook color theme' }, { key: 'C', text: 'The incident severity only' }, { key: 'D', text: 'A new analytics rule' }] },
+        { id: 'case2-q2', question: 'What does an empty SecurityEvent table prove?', options: [{ key: 'A', text: 'The hosts generated no security events' }, { key: 'B', text: 'Nothing by itself; the collection path and table mapping must be verified' }, { key: 'C', text: 'The CEF appliance is offline' }, { key: 'D', text: 'The DCR is correct' }] },
+        { id: 'case2-q3', question: 'How should the CEF path be investigated?', options: [{ key: 'A', text: 'Check the appliance format, Syslog/CEF connector, facility, and workspace routing' }, { key: 'B', text: 'Query SecurityEvent only' }, { key: 'C', text: 'Disable AMA' }, { key: 'D', text: 'Create a watchlist' }] },
+        { id: 'case2-q4', question: 'Which change is safest after evidence is collected?', options: [{ key: 'A', text: 'Correct the DCR or WEF mapping and validate new events before tuning rules' }, { key: 'B', text: 'Delete the empty table' }, { key: 'C', text: 'Disable all connectors' }, { key: 'D', text: 'Lower every alert threshold' }] },
+      ] },
+    },
+    {
+      id: 'SC200-DEMO-CASE-003',
+      sequence: 9005,
+      title: 'Case Study: Historical Hunt and Detection Design',
+      domain: 'Perform threat hunting',
+      questionType: 'case_study',
+      scenario: 'Fabrikam retains 90 days in the Analytics tier and older records in the Data Lake tier. Analysts need a one-time historical search for a rare OAuth consent event, then a recurring detection for new consent grants. The initial query joins AuditLogs with SigninLogs.',
+      question: 'Select the tools and query behavior that match each requirement.',
+      options: [{ key: 'A', text: 'Use a Search Job for the one-time historical lookup' }, { key: 'B', text: 'Use a Summary Rule for recurring aggregation' }, { key: 'C', text: 'Use a scheduled analytics rule for the recurring detection' }, { key: 'D', text: 'Use UNION when the tables have different entity keys' }],
+      validatedAnswer: ['A', 'B', 'C', 'A'],
+      interaction: { caseQuestions: [
+        { id: 'case3-q1', question: 'Which capability fits the one-time historical lookup?', options: [{ key: 'A', text: 'Search Job against the supported historical source' }, { key: 'B', text: 'Summary Rule' }, { key: 'C', text: 'Workbook' }, { key: 'D', text: 'Automation rule' }] },
+        { id: 'case3-q2', question: 'Which capability is designed for recurring aggregation?', options: [{ key: 'A', text: 'Search Job' }, { key: 'B', text: 'Summary Rule' }, { key: 'C', text: 'Incident comment' }, { key: 'D', text: 'Watchlist' }] },
+        { id: 'case3-q3', question: 'How should the recurring consent detection run?', options: [{ key: 'A', text: 'Scheduled analytics rule with a lookback covering the intended interval' }, { key: 'B', text: 'A one-time notebook export' }, { key: 'C', text: 'A workbook refresh only' }, { key: 'D', text: 'A data connector restart' }] },
+        { id: 'case3-q4', question: 'When is JOIN preferable to UNION here?', options: [{ key: 'A', text: 'When correlating matching user or application keys across AuditLogs and SigninLogs' }, { key: 'B', text: 'When simply appending rows with the same schema' }, { key: 'C', text: 'When deleting old data' }, { key: 'D', text: 'When changing retention tiers' }] },
+      ] },
+    },
+  );
 
   const insertSql = `
     INSERT OR IGNORE INTO questions (
