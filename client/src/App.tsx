@@ -82,7 +82,7 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/api/exam/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Practice', totalQuestions: 57 }),
+        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Practice', totalQuestions: 50 }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || `Exam service returned ${res.status}`)
@@ -191,7 +191,7 @@ function App() {
         <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-sky-500 via-cyan-500 to-emerald-500 p-6 text-white shadow-lg dark:border-slate-800">
           <h1 className="text-2xl font-bold">SC-200 Exam Simulator & Security Analyst Assessment</h1>
           <p className="mt-2 text-sm text-cyan-50">
-            Local interactive training with timed exams, KQL-centered practice style questions, case scenarios, and analytics.
+          50-question balanced assessment with equal imported and newly authored advanced questions, case scenarios, and analytics.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button

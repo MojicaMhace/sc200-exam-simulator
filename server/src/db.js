@@ -169,6 +169,10 @@ async function backfillQuestionMetadata(db) {
     if (!row.difficulty || row.difficulty === 'intermediate' && inferredDifficulty === 'advanced') {
       await db.run('UPDATE questions SET difficulty = ? WHERE id = ?', [inferredDifficulty, row.id]);
     }
+    if (row.id.startsWith('SC200-DEMO-') || row.id.startsWith('SC200-EXT-') || row.id.startsWith('SC200-SKILL-')) {
+      await db.run("UPDATE questions SET source_type = 'Original authored' WHERE id = ?", [row.id]);
+      await db.run("UPDATE questions SET difficulty = 'advanced' WHERE id = ?", [row.id]);
+    }
   }
 }
 

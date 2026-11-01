@@ -59,19 +59,40 @@ async function main() {
 
   app.post('/api/exam/start', async (req, res) => {
     const mode = typeof req.body?.mode === 'string' ? req.body.mode : 'Practice';
-    const requestedTotal = Number(req.body?.totalQuestions || 57);
-    const total = Number.isFinite(requestedTotal) && requestedTotal > 0 ? Math.floor(requestedTotal) : 57;
+    const requestedTotal = Number(req.body?.totalQuestions || 50);
+    const total = Number.isFinite(requestedTotal) && requestedTotal > 0 ? Math.floor(requestedTotal) : 50;
     const standardQuestions = await db.all(
-      "SELECT id, domain FROM questions WHERE question_type != 'case_study'",
+      "SELECT id, domain, source_type, validation_status, validated_answer_json FROM questions WHERE question_type != 'case_study' AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'",
     );
     const caseQuestions = await db.all(
-      "SELECT id, validated_answer_json FROM questions WHERE question_type = 'case_study' ORDER BY sequence ASC",
+      "SELECT id, source_type, validated_answer_json FROM questions WHERE question_type = 'case_study' ORDER BY sequence ASC",
     );
     if (standardQuestions.length === 0) {
       return res.status(503).json({ error: 'No standard questions are available' });
     }
 
-    const questionIds = selectBlueprintQuestions(standardQuestions, total);
+    const recentRows = await db.all(
+      'SELECT question_ids_json FROM exam_sessions ORDER BY id DESC LIMIT 10',
+    );
+    const answeredRows = await db.all(
+      'SELECT question_id FROM exam_answers ORDER BY id DESC LIMIT 200',
+    );
+    const recentlySeen = new Set([
+      recentRows.flatMap((row) => JSON.parse(row.question_ids_json || '[]')),
+      ...answeredRows.map((row) => row.question_id),
+    ].flat());
+    let selection;
+    try {
+      selection = selectBlueprintQuestions(standardQuestions, total, recentlySeen);
+    } catch (error) {
+      return res.status(409).json({ error: error.message });
+    }
+    const { questionIds, sourceDistribution } = selection;
+    const caseStudyDistribution = caseQuestions.reduce((counts, question) => {
+      const key = question.source_type === 'Imported' ? 'imported' : 'authored';
+      counts[key] += 1;
+      return counts;
+    }, { imported: 0, authored: 0 });
     const allQuestionIds = [...questionIds, ...caseQuestions.map((q) => q.id)];
     const pointRows = await db.all(
       `SELECT id, question_type, validated_answer_json FROM questions WHERE id IN (${allQuestionIds.map(() => '?').join(',')})`,
@@ -95,6 +116,8 @@ async function main() {
       questionIds,
       caseQuestionIds: caseQuestions.map((q) => q.id),
       totalQuestions: questionIds.length,
+      sourceDistribution,
+      caseStudyDistribution,
       startedAt,
     });
   });
@@ -228,34 +251,36 @@ async function main() {
   });
 }
 
-function selectBlueprintQuestions(questions, total) {
-  const targets = [
-    { domain: 'Manage a security operations environment', ratio: 0.425 },
-    { domain: 'Respond to security incidents', ratio: 0.375 },
-    { domain: 'Perform threat hunting', ratio: 0.2 },
-  ];
-  const selected = [];
-  const pools = new Map(targets.map(({ domain }) => [
-    domain,
-    questions.filter((question) => question.domain === domain),
-  ]));
+function selectBlueprintQuestions(questions, total, recentlySeen = new Set()) {
+  const importedCount = Math.floor(total / 2);
+  const authoredCount = total - importedCount;
+  const imported = questions.filter((question) => question.source_type === 'Imported');
+  const authored = questions.filter((question) => question.source_type !== 'Imported');
 
-  for (const { domain, ratio } of targets) {
-    const count = Math.round(total * ratio);
-    const pool = shuffle(pools.get(domain) || []);
-    selected.push(...pool.slice(0, count).map((question) => question.id));
+  if (imported.length < importedCount || authored.length < authoredCount) {
+    throw new Error(
+      `The requested ${total}-question exam needs ${importedCount} imported and ${authoredCount} newly authored validated questions, ` +
+      `but only ${imported.length} imported and ${authored.length} newly authored questions are available.`,
+    );
   }
 
-  const remaining = shuffle(questions.filter((question) => !selected.includes(question.id)));
-  selected.push(...remaining.slice(0, Math.max(0, total - selected.length)).map((question) => question.id));
-  if (selected.length < total) {
-    const fallback = shuffle(questions);
-    for (const question of fallback) {
-      if (selected.length >= total) break;
-      selected.push(question.id);
-    }
-  }
-  return shuffle(selected.slice(0, total));
+  const selectedImported = chooseFresh(imported, importedCount, recentlySeen);
+  const selectedAuthored = chooseFresh(authored, authoredCount, recentlySeen);
+  const selected = shuffle([...selectedImported, ...selectedAuthored]);
+  return {
+    questionIds: selected.map((question) => question.id),
+    sourceDistribution: {
+      imported: selectedImported.length,
+      authored: selectedAuthored.length,
+      requestedTotal: total,
+    },
+  };
+}
+
+function chooseFresh(pool, count, recentlySeen) {
+  return shuffle(pool)
+    .sort((left, right) => Number(recentlySeen.has(left.id)) - Number(recentlySeen.has(right.id)))
+    .slice(0, count);
 }
 
 function shuffle(values) {
