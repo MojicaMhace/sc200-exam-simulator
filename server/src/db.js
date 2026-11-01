@@ -11,6 +11,7 @@ const SKILL_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_skill_question
 const RBAC_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_rbac_question_bank.json');
 const EXPERT_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_expert_question_bank.json');
 const DUMP_MARKDOWN_PATH = path.join(__dirname, '..', '..', 'sc200_30_question_bank.md');
+const RECONSTRUCTED_DUMP_PATH = path.join(__dirname, '..', '..', 'sc200_reconstructed_dump_question_bank.json');
 
 async function getDb() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -118,6 +119,7 @@ async function seedQuestionsIfEmpty(db) {
     await importQuestionFile(db, RBAC_IMPORT_PATH);
     await importQuestionFile(db, EXPERT_IMPORT_PATH);
     await importDumpMarkdown(db);
+    await importQuestionFile(db, RECONSTRUCTED_DUMP_PATH);
     return;
   }
 
@@ -133,6 +135,7 @@ async function seedQuestionsIfEmpty(db) {
   await importQuestionFile(db, RBAC_IMPORT_PATH);
   await importQuestionFile(db, EXPERT_IMPORT_PATH);
   await importDumpMarkdown(db);
+  await importQuestionFile(db, RECONSTRUCTED_DUMP_PATH);
 }
 
 async function insertQuestions(db, questions) {

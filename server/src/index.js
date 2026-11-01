@@ -115,7 +115,7 @@ async function main() {
       : caseQuestions.filter((question) => question.difficulty === requestedDifficulty);
     const selectedCases = chooseFresh(eligibleCases, Math.min(1, eligibleCases.length), recentCaseIds, random);
     const caseStudyDistribution = selectedCases.reduce((counts, question) => {
-      const key = question.source_type === 'Imported' ? 'imported' : 'authored';
+      const key = ['Imported', 'Imported dump', 'Reconstructed from supplied dump'].includes(question.source_type) ? 'imported' : 'authored';
       counts[key] += 1;
       return counts;
     }, { imported: 0, authored: 0 });
@@ -289,8 +289,8 @@ function selectBlueprintQuestions(questions, total, recentlySeen = new Set(), re
   const eligible = questions.filter((question) => requestedDifficulty === 'all' || question.difficulty === requestedDifficulty);
   const importedCount = Math.floor(total / 2);
   const authoredCount = total - importedCount;
-  const imported = eligible.filter((question) => question.source_type === 'Imported');
-  const authored = eligible.filter((question) => question.source_type !== 'Imported');
+  const imported = eligible.filter((question) => ['Imported', 'Imported dump', 'Reconstructed from supplied dump'].includes(question.source_type));
+  const authored = eligible.filter((question) => !['Imported', 'Imported dump', 'Reconstructed from supplied dump'].includes(question.source_type));
 
   if (requestedDifficulty === 'expert' && imported.length < importedCount && authored.length >= total) {
     const selectedAuthored = chooseFresh(authored, total, recentlySeen, random);
@@ -333,8 +333,8 @@ async function buildDiagnostics(db) {
   const counts = await db.get(`
     SELECT COUNT(*) AS sqliteRecords,
       SUM(CASE WHEN active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS playable,
-      SUM(CASE WHEN source_type = 'Imported' AND active = 1 AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS imported,
-      SUM(CASE WHEN source_type != 'Imported' AND active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS authored,
+      SUM(CASE WHEN source_type IN ('Imported', 'Imported dump', 'Reconstructed from supplied dump') AND active = 1 AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS imported,
+      SUM(CASE WHEN source_type NOT IN ('Imported', 'Imported dump', 'Reconstructed from supplied dump') AND active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]' THEN 1 ELSE 0 END) AS authored,
       COUNT(DISTINCT id) AS uniqueQuestionIds
     FROM questions
   `);
@@ -353,7 +353,7 @@ async function buildDiagnostics(db) {
     GROUP BY difficulty, source_type
   `);
   const importedDumpArchive = await db.get("SELECT COUNT(*) AS count FROM questions WHERE source_type = 'Imported dump'");
-  const importedDumpPlayable = await db.get("SELECT COUNT(*) AS count FROM questions WHERE source_type = 'Imported dump' AND active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'");
+  const importedDumpPlayable = await db.get("SELECT COUNT(*) AS count FROM questions WHERE source_type IN ('Imported dump', 'Reconstructed from supplied dump') AND active = 1 AND validated_answer_json IS NOT NULL AND validated_answer_json != '[]'");
   return {
     apiVersion: '2026-11-01-balanced-selection',
     buildCommit: BUILD_COMMIT,

@@ -90,14 +90,16 @@ test('scores partial credit and preserves shuffled answer keys', async () => {
   assert.equal(body.feedback.correct, true);
 });
 
-test('reports the unavailable imported source pool instead of misrepresenting balance', async () => {
+test('uses reconstructed dump questions in the balanced source pool', async () => {
   const { response, body } = await request('/api/exam/start', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ mode: 'Exam', totalQuestions: 20, difficulty: 'all' }),
   });
-  assert.equal(response.status, 409);
-  assert.match(body.error, /needs 10 imported and 10 newly authored/);
+  assert.equal(response.status, 200);
+  assert.equal(body.sourceDistribution.imported, 10);
+  assert.equal(body.sourceDistribution.authored, 10);
+  assert.ok(body.questionIds.some((id) => id.startsWith('SC200-RECON-')));
 });
 
 test('Practice gives feedback while Exam protects answers', async () => {

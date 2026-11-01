@@ -10,6 +10,7 @@ const files = [
   'sc200_skill_question_bank.json',
   'sc200_rbac_question_bank.json',
   'sc200_expert_question_bank.json',
+  'sc200_reconstructed_dump_question_bank.json',
 ];
 
 async function main() {
@@ -40,6 +41,7 @@ async function main() {
   const attempts = await db.get('SELECT COUNT(DISTINCT question_id) AS recentlyAttempted FROM exam_answers WHERE id > COALESCE((SELECT MAX(id) - 200 FROM exam_answers), 0)');
   result.recentlyAttempted = attempts.recentlyAttempted;
   result.rbac = groupBy(playable.filter((row) => row.scenario_family.toLowerCase().startsWith('rbac')), 'difficulty');
+  result.reconstructedDump = groupBy(playable.filter((row) => row.source_type === 'Reconstructed from supplied dump'), 'difficulty');
   console.log(JSON.stringify(result, null, 2));
   await db.close();
 }
