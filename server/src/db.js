@@ -33,7 +33,11 @@ async function initDb() {
       original_answer TEXT,
       validated_answer_json TEXT,
       validation_status TEXT,
-      source_review_date TEXT
+      source_review_date TEXT,
+      source_type TEXT NOT NULL DEFAULT 'Imported',
+      subtopic TEXT NOT NULL DEFAULT 'General',
+      difficulty TEXT NOT NULL DEFAULT 'intermediate',
+      learn_references_json TEXT NOT NULL DEFAULT '[]'
     );
 
     CREATE TABLE IF NOT EXISTS exam_sessions (
@@ -52,6 +56,8 @@ async function initDb() {
       question_id TEXT NOT NULL,
       answer_json TEXT NOT NULL,
       is_correct INTEGER NOT NULL,
+      earned_points INTEGER NOT NULL DEFAULT 0,
+      available_points INTEGER NOT NULL DEFAULT 1,
       FOREIGN KEY (session_id) REFERENCES exam_sessions(id),
       FOREIGN KEY (question_id) REFERENCES questions(id)
     );
@@ -65,6 +71,28 @@ async function initDb() {
     await db.exec('ALTER TABLE exam_sessions ADD COLUMN question_ids_json TEXT');
   } catch (error) {
     if (!String(error.message).includes('duplicate column name')) throw error;
+  }
+  for (const statement of [
+    "ALTER TABLE questions ADD COLUMN source_type TEXT NOT NULL DEFAULT 'Imported'",
+    "ALTER TABLE questions ADD COLUMN subtopic TEXT NOT NULL DEFAULT 'General'",
+    "ALTER TABLE questions ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'intermediate'",
+    "ALTER TABLE questions ADD COLUMN learn_references_json TEXT NOT NULL DEFAULT '[]'",
+  ]) {
+    try {
+      await db.exec(statement);
+    } catch (error) {
+      if (!String(error.message).includes('duplicate column name')) throw error;
+    }
+    for (const statement of [
+      "ALTER TABLE exam_answers ADD COLUMN earned_points INTEGER NOT NULL DEFAULT 0",
+      "ALTER TABLE exam_answers ADD COLUMN available_points INTEGER NOT NULL DEFAULT 1",
+    ]) {
+      try {
+        await db.exec(statement);
+      } catch (error) {
+        if (!String(error.message).includes('duplicate column name')) throw error;
+      }
+    }
   }
 
   await seedQuestionsIfEmpty(db);
@@ -95,8 +123,9 @@ async function insertQuestions(db, questions) {
   const insertSql = `
     INSERT OR IGNORE INTO questions (
       id, sequence, title, domain, question_type, scenario, question,
-      options_json, original_answer, validated_answer_json, validation_status, source_review_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      options_json, original_answer, validated_answer_json, validation_status, source_review_date,
+      source_type, subtopic, difficulty, learn_references_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   for (const q of questions) {
@@ -113,7 +142,25 @@ async function insertQuestions(db, questions) {
       JSON.stringify(q.validatedAnswer || []),
       q.validationStatus || 'Needs Review',
       q.sourceReviewDate || null,
+      q.sourceType || (q.id.startsWith('SC200-SKILL-') || q.id.startsWith('SC200-EXT-') ? 'Original generated' : 'Imported'),
+      q.subtopic || inferSubtopic(q),
+      q.difficulty || inferDifficulty(q),
+      JSON.stringify(q.learnReferences || []),
     ]);
+  }
+
+  function inferSubtopic(question) {
+    const text = `${question.title} ${question.question}`.toLowerCase();
+    if (text.includes('kql') || text.includes('query')) return 'KQL';
+    if (text.includes('connector') || text.includes('ama') || text.includes('dcr')) return 'Log ingestion';
+    if (text.includes('job') || text.includes('search')) return 'Sentinel jobs';
+    if (text.includes('incident') || text.includes('response')) return 'Incident response';
+    return 'General';
+  }
+
+  function inferDifficulty(question) {
+    const text = `${question.scenario} ${question.question}`.toLowerCase();
+    return text.length > 220 || text.includes('which sequence') || text.includes('diagnos') ? 'advanced' : 'intermediate';
   }
 }
 

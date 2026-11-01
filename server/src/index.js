@@ -27,6 +27,7 @@ async function main() {
 
   app.get('/api/questions', async (req, res) => {
     const domain = req.query.domain;
+    const includeAnswers = req.query.includeAnswers === 'true';
     const rows = domain
       ? await db.all('SELECT * FROM questions WHERE domain = ? ORDER BY sequence ASC', [domain])
       : await db.all('SELECT * FROM questions ORDER BY sequence ASC');
@@ -40,8 +41,14 @@ async function main() {
       scenario: r.scenario,
       question: r.question,
       options: JSON.parse(r.options_json),
-      originalAnswer: r.original_answer,
-      validatedAnswer: JSON.parse(r.validated_answer_json || '[]'),
+      sourceType: r.source_type,
+      subtopic: r.subtopic,
+      difficulty: r.difficulty,
+      learnReferences: JSON.parse(r.learn_references_json || '[]'),
+      ...(includeAnswers ? {
+        originalAnswer: r.original_answer,
+        validatedAnswer: JSON.parse(r.validated_answer_json || '[]'),
+      } : {}),
       ...(r.interaction_json ? JSON.parse(r.interaction_json) : {}),
       validationStatus: r.validation_status,
       sourceReviewDate: r.source_review_date,
@@ -127,8 +134,8 @@ async function main() {
       answeredPoints += score.totalPoints;
 
       await db.run(
-        'INSERT INTO exam_answers (session_id, question_id, answer_json, is_correct) VALUES (?, ?, ?, ?)',
-        [sessionId, item.questionId, JSON.stringify(candidate), isCorrect ? 1 : 0],
+        'INSERT INTO exam_answers (session_id, question_id, answer_json, is_correct, earned_points, available_points) VALUES (?, ?, ?, ?, ?, ?)',
+        [sessionId, item.questionId, JSON.stringify(candidate), isCorrect ? 1 : 0, score.correctPoints, score.totalPoints],
       );
     }
 
@@ -152,14 +159,23 @@ async function main() {
   app.get('/api/analytics/summary', async (_, res) => {
     const sessions = await db.all('SELECT id, started_at, completed_at, mode, total_questions, score_percent FROM exam_sessions ORDER BY id DESC LIMIT 50');
     const byDomain = await db.all(`
-      SELECT q.domain as domain, COUNT(*) as attempts, SUM(a.is_correct) as correct
+      SELECT q.domain as domain, COUNT(*) as attempts, SUM(a.earned_points) as earned, SUM(a.available_points) as available,
+        ROUND(CASE WHEN SUM(a.available_points) > 0 THEN SUM(a.earned_points) * 100.0 / SUM(a.available_points) ELSE 0 END, 1) as accuracy
       FROM exam_answers a
       JOIN questions q ON q.id = a.question_id
       GROUP BY q.domain
       ORDER BY attempts DESC
     `);
+    const bySubtopic = await db.all(`
+      SELECT q.subtopic as subtopic, COUNT(*) as attempts, SUM(a.earned_points) as earned, SUM(a.available_points) as available,
+        ROUND(CASE WHEN SUM(a.available_points) > 0 THEN SUM(a.earned_points) * 100.0 / SUM(a.available_points) ELSE 0 END, 1) as accuracy
+      FROM exam_answers a
+      JOIN questions q ON q.id = a.question_id
+      GROUP BY q.subtopic
+      ORDER BY attempts DESC
+    `);
 
-    res.json({ sessions, byDomain });
+    res.json({ sessions, byDomain, bySubtopic });
   });
 
   app.get('*', (req, res, next) => {

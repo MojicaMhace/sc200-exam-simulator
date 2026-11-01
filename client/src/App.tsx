@@ -5,6 +5,7 @@ import { QuestionCard } from './components/QuestionCard'
 import { AnalyticsPanel } from './components/AnalyticsPanel'
 
 type Screen = 'home' | 'exam' | 'results'
+type PracticeMode = 'exam' | 'learning'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -35,6 +36,7 @@ function App() {
   const [loadingExam, setLoadingExam] = useState(false)
   const [submittingExam, setSubmittingExam] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>('exam')
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -45,14 +47,16 @@ function App() {
     loadSummary()
   }, [])
 
-  async function loadQuestions() {
+  async function loadQuestions(includeAnswers = false): Promise<Question[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/questions`)
+      const res = await fetch(`${API_BASE_URL}/api/questions${includeAnswers ? '?includeAnswers=true' : ''}`)
       if (!res.ok) throw new Error(`Question service returned ${res.status}`)
       const data = await res.json()
       setQuestions(data.questions)
+      return data.questions
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to load questions.')
+      return []
     }
   }
 
@@ -63,20 +67,22 @@ function App() {
     setSummary(data)
   }
 
-  async function startExam() {
+  async function startExam(mode: PracticeMode) {
     setLoadingExam(true)
     setErrorMessage(null)
+    setPracticeMode(mode)
     try {
+      const availableQuestions = mode === 'learning' ? await loadQuestions(true) : questions
       const res = await fetch(`${API_BASE_URL}/api/exam/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'Simulator', totalQuestions: 57 }),
+        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Learning', totalQuestions: 57 }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || `Exam service returned ${res.status}`)
       setSessionId(data.sessionId)
 
-      const byId = new Map(questions.map((q) => [q.id, q]))
+      const byId = new Map(availableQuestions.map((q) => [q.id, q]))
       const standardItems = data.questionIds
         .map((id: string, index: number) => ({ instanceId: `question-${index + 1}`, question: byId.get(id), section: 'questions' as const }))
         .filter((item: { question?: Question }): item is ExamItem => Boolean(item.question))
@@ -139,11 +145,18 @@ function App() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
-              onClick={startExam}
+              onClick={() => startExam('exam')}
               disabled={loadingExam}
               className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-sky-700"
             >
-              <Play size={16} /> {loadingExam ? 'Loading questions...' : 'Start SC-200 Practice Exam'}
+              <Play size={16} /> {loadingExam ? 'Loading questions...' : 'Start Strict Exam Mode'}
+            </button>
+            <button
+              onClick={() => startExam('learning')}
+              disabled={loadingExam}
+              className="inline-flex items-center gap-2 rounded-md border border-white px-4 py-2 text-sm font-semibold text-white"
+            >
+              Start Learning Mode
             </button>
           </div>
         </div>
@@ -195,6 +208,8 @@ function App() {
           question={activeQuestion}
           currentAnswer={answers[activeItem.instanceId]}
           onAnswer={(answer) => setAnswers((prev) => ({ ...prev, [activeItem.instanceId]: answer }))}
+          revealFeedback={practiceMode === 'learning'}
+          lockAnswers={practiceMode === 'learning'}
         />
         {activeItem.section === 'case_studies' && (
           <p className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-100">

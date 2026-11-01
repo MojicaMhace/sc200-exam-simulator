@@ -43,7 +43,7 @@ export interface Question {
   interactionImage?: string
   caseQuestions?: CaseQuestion[]
   originalAnswer?: string
-  validatedAnswer: string[]
+  validatedAnswer?: string[]
   validationStatus: string
   sourceReviewDate?: string
 }

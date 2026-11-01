@@ -3,7 +3,8 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 interface DomainRow {
   domain: string
   attempts: number
-  correct: number
+  correct?: number
+  accuracy?: number
 }
 
 interface Props {
@@ -13,7 +14,7 @@ interface Props {
 export function AnalyticsPanel({ rows }: Props) {
   const chartData = rows.map((r) => ({
     domain: r.domain.replace('Manage a security operations environment', 'Manage SOC').replace('Respond to security incidents', 'Respond').replace('Perform threat hunting', 'Hunt'),
-    accuracy: r.attempts > 0 ? Math.round((Number(r.correct) / Number(r.attempts)) * 100) : 0,
+    accuracy: r.accuracy ?? (r.attempts > 0 ? Math.round((Number(r.correct || 0) / Number(r.attempts)) * 100) : 0),
   }))
 
   return (

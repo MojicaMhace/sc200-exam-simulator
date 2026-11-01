@@ -7,6 +7,8 @@ interface Props {
   question: Question
   onAnswer: (answer: UserAnswer) => void
   currentAnswer?: UserAnswer
+  revealFeedback?: boolean
+  lockAnswers?: boolean
 }
 
 function OptionFeedback({
@@ -23,7 +25,7 @@ function OptionFeedback({
   revealed?: boolean
 }) {
   const correct = expected.includes(optionKey)
-  if (!revealed) return null
+  if (!revealed || expected.length === 0) return null
   const teachingExplanation = explanation || getOptionExplanation(questionId, optionKey)
 
   return (
@@ -68,7 +70,7 @@ function DropSlot({ id, label, value, text }: { id: string; label: string; value
   )
 }
 
-export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
+export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback = true, lockAnswers = false }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor),
@@ -93,7 +95,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                       type="radio"
                       name={`${question.id}-${statement.id}`}
                       checked={selected[index] === value}
-                      disabled={Boolean(selected[index])}
+                      disabled={lockAnswers && Boolean(selected[index])}
                       onChange={() => {
                         const updated = [...selected]
                           updated[index] = value
@@ -105,9 +107,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                   {selected[index] && (
                     <OptionFeedback
                       optionKey={value}
-                      expected={question.validatedAnswer[index] ? [question.validatedAnswer[index]] : []}
+                      expected={question.validatedAnswer?.[index] ? [question.validatedAnswer[index]] : []}
                       questionId={question.id}
                       explanation={getYesNoExplanation(question.id, index, value)}
+                      revealed={revealFeedback && Boolean(selected[index])}
                     />
                   )}
                 </div>
@@ -135,7 +138,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
               const { active, over } = event
               if (!over || !String(over.id).startsWith('slot-')) return
               const slotIndex = Number(String(over.id).replace('slot-', ''))
-              if (placements[slotIndex]) return
+              if (lockAnswers && placements[slotIndex]) return
               const updated = [...placements]
               const previousIndex = updated.indexOf(String(active.id))
               if (previousIndex >= 0) updated[previousIndex] = ''
@@ -159,9 +162,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                       {value && (
                         <OptionFeedback
                           optionKey={value}
-                          expected={question.validatedAnswer[index] ? [question.validatedAnswer[index]] : []}
+                          expected={question.validatedAnswer?.[index] ? [question.validatedAnswer[index]] : []}
                           questionId={question.id}
                           explanation={option?.explanation}
+                          revealed={revealFeedback}
                         />
                       )}
                     </div>
@@ -195,10 +199,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                 <span className="text-sm">{opt.key}) {opt.text}</span>
                 <OptionFeedback
                   optionKey={opt.key}
-                  expected={question.validatedAnswer}
+                  expected={question.validatedAnswer || []}
                   questionId={question.id}
                   explanation={opt.explanation}
-                  revealed={current.length > 0}
+                  revealed={revealFeedback && current.length > 0}
                 />
               </label>
             )
@@ -224,11 +228,11 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                     <div key={opt.key}>
                       <button
                         onClick={() => {
-                          if (!selectedAnswers[caseQuestion.id]) {
+                          if (!lockAnswers || !selectedAnswers[caseQuestion.id]) {
                             onAnswer({ ...selectedAnswers, [caseQuestion.id]: opt.key })
                           }
                         }}
-                        disabled={Boolean(selectedAnswers[caseQuestion.id])}
+                        disabled={lockAnswers && Boolean(selectedAnswers[caseQuestion.id])}
                         aria-pressed={selectedAnswers[caseQuestion.id] === opt.key}
                         className={`block w-full rounded-md border px-3 py-2 text-left text-sm dark:bg-slate-900 ${selectedAnswers[caseQuestion.id] === opt.key ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200 dark:bg-sky-950' : 'border-slate-300 bg-white dark:border-slate-700'}`}
                       >
@@ -237,10 +241,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
                       {selectedAnswers[caseQuestion.id] && (
                         <OptionFeedback
                           optionKey={opt.key}
-                          expected={question.validatedAnswer[index] ? [question.validatedAnswer[index]] : []}
+                          expected={question.validatedAnswer?.[index] ? [question.validatedAnswer[index]] : []}
                           questionId={question.id}
                           explanation={opt.explanation}
-                          revealed={Boolean(selectedAnswers[caseQuestion.id])}
+                          revealed={revealFeedback && Boolean(selectedAnswers[caseQuestion.id])}
                         />
                       )}
                     </div>
@@ -259,7 +263,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
           <div key={opt.key}>
             <button
               onClick={() => onAnswer(opt.key)}
-              disabled={currentAnswer !== undefined}
+              disabled={lockAnswers && currentAnswer !== undefined}
               aria-pressed={currentAnswer === opt.key}
               className={`block w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800 ${currentAnswer === opt.key ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200 dark:bg-sky-950' : 'border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900'}`}
             >
@@ -268,10 +272,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer }: Props) {
             {currentAnswer !== undefined && (
               <OptionFeedback
                 optionKey={opt.key}
-                expected={question.validatedAnswer}
+                expected={question.validatedAnswer || []}
                 questionId={question.id}
                 explanation={opt.explanation}
-                revealed={currentAnswer !== undefined}
+                revealed={revealFeedback && currentAnswer !== undefined}
               />
             )}
           </div>

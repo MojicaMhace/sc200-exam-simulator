@@ -4,3 +4,14 @@ server/node_modules/
 client/dist/
 server/data/*.db
 server/data/*.db-*
+
+# Local API configuration and credentials
+.env
+.env.*
+!.env.example
+client/.env
+client/.env.*
+!client/.env.example
+server/.env
+server/.env.*
+!server/.env.example
