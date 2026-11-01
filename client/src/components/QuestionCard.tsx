@@ -1,14 +1,16 @@
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import type { Question, UserAnswer } from '../types/question'
+import type { AnswerFeedback, Question, UserAnswer } from '../types/question'
 import { getOptionExplanation, getYesNoExplanation } from '../data/optionExplanations'
 
 interface Props {
   question: Question
   onAnswer: (answer: UserAnswer) => void
   currentAnswer?: UserAnswer
-  revealFeedback?: boolean
-  lockAnswers?: boolean
+  submittedAnswer?: UserAnswer
+  feedback?: AnswerFeedback
+  onCheckAnswer?: () => void
+  showCheckButton?: boolean
 }
 
 function OptionFeedback({
@@ -30,7 +32,7 @@ function OptionFeedback({
 
   return (
     <p className={`mt-1 text-xs ${correct ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
-      <span className="font-semibold">{correct ? 'Why this is correct:' : 'Why this choice is not the best:'}</span>{' '}
+      <span className="font-semibold">{correct ? 'Why this choice works:' : 'Why this choice does not fit:'}</span>{' '}
       {teachingExplanation || (correct
         ? 'This option best satisfies the requirement described in the scenario.'
         : `This option does not satisfy the requirement as well as option ${expected.join(', ')}.`)}
@@ -70,7 +72,8 @@ function DropSlot({ id, label, value, text }: { id: string; label: string; value
   )
 }
 
-export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback = true, lockAnswers = false }: Props) {
+export function QuestionCard({ question, onAnswer, currentAnswer, submittedAnswer, feedback, onCheckAnswer, showCheckButton = false }: Props) {
+  const answerLocked = submittedAnswer !== undefined
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor),
@@ -95,7 +98,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
                       type="radio"
                       name={`${question.id}-${statement.id}`}
                       checked={selected[index] === value}
-                      disabled={lockAnswers && Boolean(selected[index])}
+                      disabled={answerLocked}
                       onChange={() => {
                         const updated = [...selected]
                           updated[index] = value
@@ -107,10 +110,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
                   {selected[index] && (
                     <OptionFeedback
                       optionKey={value}
-                      expected={question.validatedAnswer?.[index] ? [question.validatedAnswer[index]] : []}
+                      expected={feedback?.correctAnswer[index] ? [feedback.correctAnswer[index]] : []}
                       questionId={question.id}
                       explanation={getYesNoExplanation(question.id, index, value)}
-                      revealed={revealFeedback && Boolean(selected[index])}
+                      revealed={Boolean(feedback)}
                     />
                   )}
                 </div>
@@ -138,7 +141,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
               const { active, over } = event
               if (!over || !String(over.id).startsWith('slot-')) return
               const slotIndex = Number(String(over.id).replace('slot-', ''))
-              if (lockAnswers && placements[slotIndex]) return
+              if (answerLocked) return
               const updated = [...placements]
               const previousIndex = updated.indexOf(String(active.id))
               if (previousIndex >= 0) updated[previousIndex] = ''
@@ -162,10 +165,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
                       {value && (
                         <OptionFeedback
                           optionKey={value}
-                          expected={question.validatedAnswer?.[index] ? [question.validatedAnswer[index]] : []}
+                          expected={feedback?.correctAnswer[index] ? [feedback.correctAnswer[index]] : []}
                           questionId={question.id}
                           explanation={option?.explanation}
-                          revealed={revealFeedback}
+                          revealed={Boolean(feedback)}
                         />
                       )}
                     </div>
@@ -199,10 +202,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
                 <span className="text-sm">{opt.key}) {opt.text}</span>
                 <OptionFeedback
                   optionKey={opt.key}
-                  expected={question.validatedAnswer || []}
+                  expected={feedback?.correctAnswer || []}
                   questionId={question.id}
                   explanation={opt.explanation}
-                  revealed={revealFeedback && current.length > 0}
+                  revealed={Boolean(feedback)}
                 />
               </label>
             )
@@ -228,11 +231,11 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
                     <div key={opt.key}>
                       <button
                         onClick={() => {
-                          if (!lockAnswers || !selectedAnswers[caseQuestion.id]) {
+                          if (!answerLocked) {
                             onAnswer({ ...selectedAnswers, [caseQuestion.id]: opt.key })
                           }
                         }}
-                        disabled={lockAnswers && Boolean(selectedAnswers[caseQuestion.id])}
+                        disabled={answerLocked}
                         aria-pressed={selectedAnswers[caseQuestion.id] === opt.key}
                         className={`block w-full rounded-md border px-3 py-2 text-left text-sm dark:bg-slate-900 ${selectedAnswers[caseQuestion.id] === opt.key ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200 dark:bg-sky-950' : 'border-slate-300 bg-white dark:border-slate-700'}`}
                       >
@@ -241,10 +244,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
                       {selectedAnswers[caseQuestion.id] && (
                         <OptionFeedback
                           optionKey={opt.key}
-                          expected={question.validatedAnswer?.[index] ? [question.validatedAnswer[index]] : []}
+                          expected={feedback?.correctAnswer[index] ? [feedback.correctAnswer[index]] : []}
                           questionId={question.id}
                           explanation={opt.explanation}
-                          revealed={revealFeedback && Boolean(selectedAnswers[caseQuestion.id])}
+                          revealed={Boolean(feedback)}
                         />
                       )}
                     </div>
@@ -263,7 +266,7 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
           <div key={opt.key}>
             <button
               onClick={() => onAnswer(opt.key)}
-              disabled={lockAnswers && currentAnswer !== undefined}
+              disabled={answerLocked}
               aria-pressed={currentAnswer === opt.key}
               className={`block w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800 ${currentAnswer === opt.key ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200 dark:bg-sky-950' : 'border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900'}`}
             >
@@ -272,10 +275,10 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
             {currentAnswer !== undefined && (
               <OptionFeedback
                 optionKey={opt.key}
-                expected={question.validatedAnswer || []}
+                expected={feedback?.correctAnswer || []}
                 questionId={question.id}
                 explanation={opt.explanation}
-                revealed={revealFeedback && currentAnswer !== undefined}
+                revealed={Boolean(feedback)}
               />
             )}
           </div>
@@ -291,6 +294,41 @@ export function QuestionCard({ question, onAnswer, currentAnswer, revealFeedback
         <p className="mt-3 font-medium text-slate-800 dark:text-slate-100">{question.question}</p>
       )}
       {renderByType()}
+      {showCheckButton && !feedback && currentAnswer !== undefined && (
+        <button
+          type="button"
+          onClick={onCheckAnswer}
+          className="mt-4 rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+        >
+          Check Answer
+        </button>
+      )}
+      {feedback && (
+        <div className={`mt-5 space-y-3 rounded-lg border p-4 ${feedback.correct ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950' : 'border-rose-300 bg-rose-50 dark:border-rose-900 dark:bg-rose-950'}`}>
+          <p className="font-bold">{feedback.correct ? 'Correct — well done!' : 'Incorrect — let us learn from this.'}</p>
+          <p className="text-sm"><span className="font-semibold">Correct answer:</span>{' '}
+            {feedback.correctAnswer.map((key) => {
+              const option = question.options.find((item) => item.key === key)
+              return `${key}) ${option?.text || key}`
+            }).join('; ')}
+          </p>
+          <p className="text-sm"><span className="font-semibold">What this question is testing:</span> {feedback.topic}</p>
+          <p className="text-sm"><span className="font-semibold">Important clue:</span> {feedback.decisiveClue}</p>
+          {feedback.correctedQuery && <pre className="overflow-x-auto rounded bg-slate-900 p-3 text-xs text-slate-100">{feedback.correctedQuery}</pre>}
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">Why each choice works or does not fit:</p>
+            {Object.entries(feedback.optionFeedback).map(([key, explanation]) => (
+              <p key={key} className="text-sm"><span className="font-semibold">{key}:</span> {explanation}</p>
+            ))}
+          </div>
+          {feedback.references.length > 0 && (
+            <p className="text-sm">
+              <span className="font-semibold">Learn more from Microsoft:</span>{' '}
+              {feedback.references.map((reference) => <a key={reference} className="mr-2 underline" href={reference} target="_blank" rel="noreferrer">{reference}</a>)}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

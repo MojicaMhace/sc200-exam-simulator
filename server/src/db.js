@@ -96,6 +96,7 @@ async function initDb() {
   }
 
   await seedQuestionsIfEmpty(db);
+  await backfillQuestionMetadata(db);
   return db;
 }
 
@@ -149,25 +150,46 @@ async function insertQuestions(db, questions) {
     ]);
   }
 
-  function inferSubtopic(question) {
-    const text = `${question.title} ${question.question}`.toLowerCase();
-    if (text.includes('kql') || text.includes('query')) return 'KQL';
-    if (text.includes('connector') || text.includes('ama') || text.includes('dcr')) return 'Log ingestion';
-    if (text.includes('job') || text.includes('search')) return 'Sentinel jobs';
-    if (text.includes('incident') || text.includes('response')) return 'Incident response';
-    return 'General';
-  }
-
-  function inferDifficulty(question) {
-    const text = `${question.scenario} ${question.question}`.toLowerCase();
-    return text.length > 220 || text.includes('which sequence') || text.includes('diagnos') ? 'advanced' : 'intermediate';
-  }
 }
 
 async function importQuestionFile(db, filePath) {
   if (!fs.existsSync(filePath)) return;
   const questions = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   await insertQuestions(db, questions);
+}
+
+async function backfillQuestionMetadata(db) {
+  const rows = await db.all('SELECT id, title, scenario, question, subtopic, difficulty FROM questions');
+  for (const row of rows) {
+    const inferredSubtopic = inferSubtopic(row);
+    const inferredDifficulty = inferDifficulty(row);
+    if (row.subtopic === 'General' && inferredSubtopic !== 'General') {
+      await db.run('UPDATE questions SET subtopic = ? WHERE id = ?', [inferredSubtopic, row.id]);
+    }
+    if (!row.difficulty || row.difficulty === 'intermediate' && inferredDifficulty === 'advanced') {
+      await db.run('UPDATE questions SET difficulty = ? WHERE id = ?', [inferredDifficulty, row.id]);
+    }
+  }
+}
+
+function inferSubtopic(question) {
+  const text = `${question.title} ${question.scenario} ${question.question}`.toLowerCase();
+  if (text.includes('search job')) return 'Search Jobs';
+  if (text.includes('summary rule')) return 'Summary Rules';
+  if (text.includes('join')) return 'KQL JOIN';
+  if (text.includes('union')) return 'KQL UNION';
+  if (text.includes('kql') || text.includes('query') || text.includes('operator')) return 'KQL';
+  if (text.includes('cef') || text.includes('syslog') || text.includes('ama') || text.includes('dcr') || text.includes('connector')) return 'Log ingestion';
+  if (text.includes('windows security event') || text.includes('securityevent') || text.includes('windowsevent')) return 'Windows events';
+  if (text.includes('incident') || text.includes('response')) return 'Incident response';
+  if (text.includes('asr') || text.includes('attack surface reduction')) return 'ASR';
+  if (text.includes('defender xdr')) return 'Defender XDR';
+  return 'General';
+}
+
+function inferDifficulty(question) {
+  const text = `${question.scenario} ${question.question}`.toLowerCase();
+  return text.length > 220 || text.includes('which sequence') || text.includes('diagnos') ? 'advanced' : 'intermediate';
 }
 
 async function seedInteractiveSamples(db) {

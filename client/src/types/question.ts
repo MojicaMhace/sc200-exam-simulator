@@ -44,8 +44,23 @@ export interface Question {
   caseQuestions?: CaseQuestion[]
   originalAnswer?: string
   validatedAnswer?: string[]
+  subtopic?: string
+  learnReferences?: string[]
   validationStatus: string
   sourceReviewDate?: string
 }
 
 export type UserAnswer = string | string[] | boolean | Record<string, string>
+
+export interface AnswerFeedback {
+  correct: boolean
+  correctAnswer: string[]
+  submittedAnswer: UserAnswer
+  earnedPoints: number
+  availablePoints: number
+  optionFeedback: Record<string, string>
+  decisiveClue: string
+  topic: string
+  references: string[]
+  correctedQuery?: string
+}

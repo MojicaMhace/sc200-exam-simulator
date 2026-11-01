@@ -107,38 +107,26 @@ async function main() {
     }
 
     const answers = parsed.data;
-    const session = await db.get('SELECT total_questions, question_ids_json FROM exam_sessions WHERE id = ?', [sessionId]);
+    const session = await db.get('SELECT total_questions, question_ids_json, mode FROM exam_sessions WHERE id = ?', [sessionId]);
     if (!session) {
       return res.status(404).json({ error: 'Exam session not found' });
     }
     const sessionQuestionIds = new Set(JSON.parse(session.question_ids_json || '[]'));
-    let correct = 0;
-    let answeredPoints = 0;
-    let processedAnswers = 0;
     const submittedQuestionIds = new Set();
 
     for (const item of answers) {
       if (!sessionQuestionIds.has(item.questionId)) continue;
       if (submittedQuestionIds.has(item.questionId)) continue;
       submittedQuestionIds.add(item.questionId);
-      processedAnswers += 1;
-      const q = await db.get('SELECT validated_answer_json, question_type FROM questions WHERE id = ?', [item.questionId]);
-      if (!q) continue;
-
-      const expected = JSON.parse(q.validated_answer_json || '[]');
-      const candidate = item.answer;
-
-      const score = compareAnswer(expected, candidate, q.question_type);
-      const isCorrect = score.correctPoints === score.totalPoints;
-      correct += score.correctPoints;
-      answeredPoints += score.totalPoints;
-
-      await db.run(
-        'INSERT INTO exam_answers (session_id, question_id, answer_json, is_correct, earned_points, available_points) VALUES (?, ?, ?, ?, ?, ?)',
-        [sessionId, item.questionId, JSON.stringify(candidate), isCorrect ? 1 : 0, score.correctPoints, score.totalPoints],
-      );
+      await recordAnswer(sessionId, item);
     }
 
+    const totals = await db.get(
+      'SELECT COUNT(*) AS answered, COALESCE(SUM(earned_points), 0) AS correct, COALESCE(SUM(available_points), 0) AS answeredPoints FROM exam_answers WHERE session_id = ?',
+      [sessionId],
+    );
+    const correct = Number(totals.correct);
+    const answeredPoints = Number(totals.answeredPoints);
     const scorePercent = session.total_questions > 0 ? (correct / session.total_questions) * 100 : 0;
     await db.run(
       'UPDATE exam_sessions SET completed_at = ?, score_percent = ? WHERE id = ?',
@@ -148,13 +136,63 @@ async function main() {
     res.json({
       sessionId,
       total: session.total_questions,
-      answered: processedAnswers,
+      answered: Number(totals.answered),
       answeredPoints,
       unanswered: Math.max(0, session.total_questions - answeredPoints),
       correct,
       scorePercent,
     });
   });
+
+  app.post('/api/exam/:sessionId/question-check', async (req, res) => {
+    const sessionId = Number(req.params.sessionId);
+    const parsed = answerSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid answer payload' });
+
+    const session = await db.get('SELECT mode, question_ids_json FROM exam_sessions WHERE id = ?', [sessionId]);
+    if (!session) return res.status(404).json({ error: 'Exam session not found' });
+    if (session.mode !== 'Practice') return res.status(403).json({ error: 'Immediate feedback is only available in Practice Mode' });
+    if (!JSON.parse(session.question_ids_json || '[]').includes(parsed.data.questionId)) {
+      return res.status(400).json({ error: 'Question is not part of this exam session' });
+    }
+
+    const existing = await db.get(
+      'SELECT answer_json, earned_points, available_points FROM exam_answers WHERE session_id = ? AND question_id = ?',
+      [sessionId, parsed.data.questionId],
+    );
+    if (existing) {
+      const question = await db.get('SELECT * FROM questions WHERE id = ?', [parsed.data.questionId]);
+      return res.json({
+        feedback: buildFeedback(question, JSON.parse(existing.answer_json), existing.earned_points, existing.available_points),
+      });
+    }
+
+    await recordAnswer(sessionId, parsed.data);
+    const saved = await db.get(
+      'SELECT answer_json, earned_points, available_points FROM exam_answers WHERE session_id = ? AND question_id = ?',
+      [sessionId, parsed.data.questionId],
+    );
+    const question = await db.get('SELECT * FROM questions WHERE id = ?', [parsed.data.questionId]);
+    res.json({
+      feedback: buildFeedback(question, parsed.data.answer, saved.earned_points, saved.available_points),
+    });
+  });
+
+  async function recordAnswer(sessionId, item) {
+    const existing = await db.get(
+      'SELECT id FROM exam_answers WHERE session_id = ? AND question_id = ?',
+      [sessionId, item.questionId],
+    );
+    if (existing) return;
+    const question = await db.get('SELECT validated_answer_json, question_type FROM questions WHERE id = ?', [item.questionId]);
+    if (!question) return;
+    const expected = JSON.parse(question.validated_answer_json || '[]');
+    const score = compareAnswer(expected, item.answer, question.question_type);
+    await db.run(
+      'INSERT INTO exam_answers (session_id, question_id, answer_json, is_correct, earned_points, available_points) VALUES (?, ?, ?, ?, ?, ?)',
+      [sessionId, item.questionId, JSON.stringify(item.answer), score.correctPoints === score.totalPoints ? 1 : 0, score.correctPoints, score.totalPoints],
+    );
+  }
 
   app.get('/api/analytics/summary', async (_, res) => {
     const sessions = await db.all('SELECT id, started_at, completed_at, mode, total_questions, score_percent FROM exam_sessions ORDER BY id DESC LIMIT 50');
@@ -227,6 +265,64 @@ function shuffle(values) {
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
   return shuffled;
+}
+
+function buildFeedback(question, submittedAnswer, earnedPoints, availablePoints) {
+  const expected = JSON.parse(question.validated_answer_json || '[]');
+  const options = JSON.parse(question.options_json || '[]');
+  const optionFeedback = {};
+  for (const option of options) {
+    optionFeedback[option.key] = option.explanation || explainOption(question, option.key, expected);
+  }
+  const answerValues = Array.isArray(submittedAnswer)
+    ? submittedAnswer
+    : submittedAnswer && typeof submittedAnswer === 'object'
+      ? Object.values(submittedAnswer)
+      : [String(submittedAnswer)];
+  const score = compareAnswer(expected, submittedAnswer, question.question_type);
+  const references = JSON.parse(question.learn_references_json || '[]');
+  if (references.length === 0) references.push(referenceFor(question));
+
+  return {
+    correct: score.correctPoints === score.totalPoints,
+    correctAnswer: expected,
+    submittedAnswer,
+    earnedPoints,
+    availablePoints,
+    optionFeedback,
+    decisiveClue: decisiveClueFor(question),
+    topic: question.subtopic || 'SC-200 security operations',
+    references,
+    ...(isQueryQuestion(question) ? {
+      correctedQuery: expected.map((value) => options.find((option) => option.key === value)?.text || value).join('\n'),
+      submittedQuery: answerValues.join('\n'),
+    } : {}),
+  };
+}
+
+function explainOption(question, optionKey, expected) {
+  if (expected.includes(optionKey)) return `This is the best choice because it directly solves the ${question.subtopic || 'security operations'} requirement.`;
+  return `This choice does not fit as well because it misses the main requirement. The better choice is ${expected.join(', ')}.`;
+}
+
+function decisiveClueFor(question) {
+  const scenario = String(question.scenario || '').trim();
+  if (scenario) return scenario.split(/[.!?]/)[0] + '.';
+  return `The decisive clue is the requirement in the question: ${question.question}`;
+}
+
+function referenceFor(question) {
+  const text = `${question.title} ${question.subtopic} ${question.question}`.toLowerCase();
+  if (text.includes('search job')) return 'https://learn.microsoft.com/en-us/azure/sentinel/data-lake-search';
+  if (text.includes('summary rule')) return 'https://learn.microsoft.com/en-us/azure/sentinel/summary-rules';
+  if (text.includes('kql')) return 'https://learn.microsoft.com/en-us/kusto/query/';
+  if (text.includes('ama') || text.includes('dcr') || text.includes('connector')) return 'https://learn.microsoft.com/en-us/azure/sentinel/data-connectors-reference';
+  return 'https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/sc-200';
+}
+
+function isQueryQuestion(question) {
+  const text = `${question.title} ${question.question} ${question.options_json}`.toLowerCase();
+  return text.includes('kql') || text.includes('query') || text.includes('operator');
 }
 
 function compareAnswer(expected, candidate, questionType) {

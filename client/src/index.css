@@ -4,6 +4,13 @@
 
 :root {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color-scheme: light;
+  background: #f8fafc;
+}
+
+:root.dark {
+  color-scheme: dark;
+  background: #020617;
 }
 
 * {

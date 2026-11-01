@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Moon, Sun, Play, CheckCircle2 } from 'lucide-react'
-import type { Question, UserAnswer } from './types/question'
+import type { AnswerFeedback, Question, UserAnswer } from './types/question'
 import { QuestionCard } from './components/QuestionCard'
 import { AnalyticsPanel } from './components/AnalyticsPanel'
 
 type Screen = 'home' | 'exam' | 'results'
-type PracticeMode = 'exam' | 'learning'
+type PracticeMode = 'exam' | 'practice'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -30,9 +30,14 @@ function App() {
   const [sessionId, setSessionId] = useState<number | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, UserAnswer>>({})
+  const [submittedAnswers, setSubmittedAnswers] = useState<Record<string, UserAnswer>>({})
+  const [feedback, setFeedback] = useState<Record<string, AnswerFeedback>>({})
   const [result, setResult] = useState<{ total: number; answered: number; unanswered: number; correct: number; scorePercent: number } | null>(null)
   const [summary, setSummary] = useState<Summary | null>(null)
-  const [dark, setDark] = useState(false)
+  const [dark, setDark] = useState(() => {
+    const savedTheme = window.localStorage.getItem('sc200-theme')
+    return savedTheme === 'dark'
+  })
   const [loadingExam, setLoadingExam] = useState(false)
   const [submittingExam, setSubmittingExam] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -40,6 +45,7 @@ function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
+    window.localStorage.setItem('sc200-theme', dark ? 'dark' : 'light')
   }, [dark])
 
   useEffect(() => {
@@ -72,11 +78,11 @@ function App() {
     setErrorMessage(null)
     setPracticeMode(mode)
     try {
-      const availableQuestions = mode === 'learning' ? await loadQuestions(true) : questions
+      const availableQuestions = mode === 'practice' ? await loadQuestions() : questions
       const res = await fetch(`${API_BASE_URL}/api/exam/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Learning', totalQuestions: 57 }),
+        body: JSON.stringify({ mode: mode === 'exam' ? 'Exam' : 'Practice', totalQuestions: 57 }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || `Exam service returned ${res.status}`)
@@ -92,6 +98,8 @@ function App() {
       if (standardItems.length === 0) throw new Error('No questions were returned by the server.')
       setExamItems([...standardItems, ...caseItems])
       setAnswers({})
+      setSubmittedAnswers({})
+      setFeedback({})
       setActiveIndex(0)
       setResult(null)
       setScreen('exam')
@@ -114,8 +122,18 @@ function App() {
     setSubmittingExam(true)
     setErrorMessage(null)
     const payload = examItems
-      .filter((item) => answers[item.instanceId] !== undefined)
-      .map((item) => ({ questionId: item.question.id, answer: answers[item.instanceId] }))
+      .filter((item) => {
+        const answer = practiceMode === 'practice'
+          ? submittedAnswers[item.instanceId]
+          : answers[item.instanceId]
+        return answer !== undefined
+      })
+      .map((item) => ({
+        questionId: item.question.id,
+        answer: practiceMode === 'practice'
+          ? submittedAnswers[item.instanceId]
+          : answers[item.instanceId],
+      }))
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/exam/${sessionId}/submit`, {
@@ -135,6 +153,24 @@ function App() {
     }
   }
 
+  async function checkAnswer() {
+    if (!sessionId || !activeItem || answers[activeItem.instanceId] === undefined || submittedAnswers[activeItem.instanceId] !== undefined) return
+    setErrorMessage(null)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/exam/${sessionId}/question-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId: activeItem.question.id, answer: answers[activeItem.instanceId] }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || `Answer service returned ${res.status}`)
+      setSubmittedAnswers((previous) => ({ ...previous, [activeItem.instanceId]: answers[activeItem.instanceId] }))
+      setFeedback((previous) => ({ ...previous, [activeItem.instanceId]: data.feedback }))
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to check this answer.')
+    }
+  }
+
   function renderHome() {
     return (
       <div className="space-y-6">
@@ -145,18 +181,18 @@ function App() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
-              onClick={() => startExam('exam')}
+              onClick={() => startExam('practice')}
               disabled={loadingExam}
               className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-sky-700"
             >
-              <Play size={16} /> {loadingExam ? 'Loading questions...' : 'Start Strict Exam Mode'}
+              <Play size={16} /> {loadingExam ? 'Loading questions...' : 'Start Practice Mode'}
             </button>
             <button
-              onClick={() => startExam('learning')}
+              onClick={() => startExam('exam')}
               disabled={loadingExam}
               className="inline-flex items-center gap-2 rounded-md border border-white px-4 py-2 text-sm font-semibold text-white"
             >
-              Start Learning Mode
+              Start Exam Simulation Mode
             </button>
           </div>
         </div>
@@ -207,9 +243,11 @@ function App() {
         <QuestionCard
           question={activeQuestion}
           currentAnswer={answers[activeItem.instanceId]}
+          submittedAnswer={submittedAnswers[activeItem.instanceId]}
+          feedback={feedback[activeItem.instanceId]}
           onAnswer={(answer) => setAnswers((prev) => ({ ...prev, [activeItem.instanceId]: answer }))}
-          revealFeedback={practiceMode === 'learning'}
-          lockAnswers={practiceMode === 'learning'}
+          onCheckAnswer={checkAnswer}
+          showCheckButton={practiceMode === 'practice'}
         />
         {activeItem.section === 'case_studies' && (
           <p className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-100">
@@ -233,9 +271,9 @@ function App() {
           <button
             onClick={() => setActiveIndex((i) => Math.min(examItems.length - 1, i + 1))}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white dark:bg-slate-100 dark:text-slate-900"
-            disabled={activeIndex === examItems.length - 1}
+            disabled={activeIndex === examItems.length - 1 || (practiceMode === 'practice' && !feedback[activeItem.instanceId])}
           >
-            Next
+            {practiceMode === 'practice' && feedback[activeItem.instanceId] ? 'Next Question' : 'Next'}
           </button>
           <button
             onClick={submitExam}
@@ -284,6 +322,7 @@ function App() {
             onClick={() => setDark((v) => !v)}
             className="rounded-md border border-slate-300 p-2 dark:border-slate-700"
             aria-label="Toggle theme"
+            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
