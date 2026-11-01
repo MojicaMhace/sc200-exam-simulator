@@ -7,6 +7,7 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'sc200.db');
 const IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_additional_25_question_bank.json');
 const EXTENDED_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_extended_question_bank.json');
+const SKILL_IMPORT_PATH = path.join(__dirname, '..', '..', 'sc200_skill_question_bank.json');
 
 async function getDb() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -75,6 +76,7 @@ async function seedQuestionsIfEmpty(db) {
   if (row && row.count > 0) {
     await seedInteractiveSamples(db);
     await importQuestionFile(db, EXTENDED_IMPORT_PATH);
+    await importQuestionFile(db, SKILL_IMPORT_PATH);
     return;
   }
 
@@ -86,6 +88,7 @@ async function seedQuestionsIfEmpty(db) {
   await insertQuestions(db, questions);
   await seedInteractiveSamples(db);
   await importQuestionFile(db, EXTENDED_IMPORT_PATH);
+  await importQuestionFile(db, SKILL_IMPORT_PATH);
 }
 
 async function insertQuestions(db, questions) {
@@ -172,42 +175,55 @@ async function seedInteractiveSamples(db) {
       title: 'Case Study: Suspicious Sign-in Spike',
       domain: 'Perform threat hunting',
       questionType: 'case_study',
-      scenario: 'Contoso detects impossible travel and suspicious mailbox rules. You need to choose the best immediate hunt action.',
-      question: 'What is the best next step?',
+      scenario: 'Contoso security receives an alert that user Ana Lopez signed in from Manila and Singapore within 18 minutes. A new inbox rule forwarding messages to an external address was created shortly afterward. The incident record includes the user, source IPs, timestamps, and mailbox audit activity.',
+      question: 'Use the evidence in the case to determine the investigation and response sequence.',
       options: [
-        { key: 'A', text: 'Run KQL over SigninLogs and AuditLogs, then correlate user/entity timeline' },
+        { key: 'A', text: 'Correlate SigninLogs and AuditLogs by user and time' },
         { key: 'B', text: 'Wait for the weekly workbook refresh' },
         { key: 'C', text: 'Only check endpoint antivirus events' },
         { key: 'D', text: 'Disable all user accounts in the tenant' },
       ],
-      validatedAnswer: ['A', 'B', 'C'],
+      validatedAnswer: ['A', 'B', 'C', 'A'],
       interaction: {
         caseQuestions: [
           {
             id: 'case-q1',
-            question: 'What is the best first investigation step?',
+            question: 'Which query approach best validates whether the sign-ins belong to the same suspicious activity?',
             options: [
-              { key: 'A', text: 'Run KQL over SigninLogs and AuditLogs, then correlate the user timeline' },
-              { key: 'B', text: 'Wait for the weekly workbook refresh' },
-              { key: 'C', text: 'Disable every user account immediately' },
+              { key: 'A', text: 'Filter SigninLogs by the user and time window, then correlate with AuditLogs', explanation: 'The same user and short time window connect the impossible-travel sign-ins to the mailbox change.' },
+              { key: 'B', text: 'Wait for the weekly workbook refresh', explanation: 'A workbook refresh delays access to the already available sign-in evidence.' },
+              { key: 'C', text: 'Query only DeviceProcessEvents', explanation: 'The evidence is an identity and mailbox event; endpoint process data alone cannot validate it.' },
+              { key: 'D', text: 'Search for every sign-in in the tenant without a time filter', explanation: 'An unbounded tenant-wide search adds noise and does not test the case timeline.' },
             ],
           },
           {
             id: 'case-q2',
-            question: 'Which additional data should you review?',
+            question: 'Which evidence most directly confirms persistence in the mailbox?',
             options: [
-              { key: 'A', text: 'Only endpoint antivirus events' },
-              { key: 'B', text: 'AuditLogs for mailbox-rule changes and consent activity' },
-              { key: 'C', text: 'Unrelated printer logs' },
+              { key: 'A', text: 'Only endpoint antivirus events', explanation: 'Endpoint antivirus data does not show who created a cloud mailbox rule.' },
+              { key: 'B', text: 'AuditLogs for inbox-rule changes and OAuth consent activity', explanation: 'Mailbox-rule and consent audit events can show how the attacker maintained access or redirected data.' },
+              { key: 'C', text: 'Unrelated printer logs', explanation: 'Printer logs do not explain the identity or mailbox activity in this case.' },
+              { key: 'D', text: 'A workbook title change', explanation: 'A presentation change is not security evidence.' },
             ],
           },
           {
             id: 'case-q3',
-            question: 'What should you do after confirming the compromise?',
+            question: 'Which response should be performed after confirming the account is compromised?',
             options: [
-              { key: 'A', text: 'Delete all audit data' },
-              { key: 'B', text: 'Ignore the mailbox rules' },
-              { key: 'C', text: 'Contain the account and remediate the malicious persistence' },
+              { key: 'A', text: 'Delete all audit data', explanation: 'Audit data is evidence and should be preserved for investigation and compliance.' },
+              { key: 'B', text: 'Ignore the mailbox rule until the next review', explanation: 'Leaving malicious forwarding active allows continued data theft.' },
+              { key: 'C', text: 'Contain the account, revoke sessions or credentials, and remove the malicious rule', explanation: 'Containment stops further access while remediation removes the persistence mechanism.' },
+              { key: 'D', text: 'Disable every account in the tenant', explanation: 'Tenant-wide disablement is disruptive and not proportional to a confirmed single-account compromise.' },
+            ],
+          },
+          {
+            id: 'case-q4',
+            question: 'What should be documented for the incident timeline?',
+            options: [
+              { key: 'A', text: 'The sign-in timestamps, source IPs, mailbox-rule change, actions taken, and affected entities', explanation: 'These facts establish the attack sequence, scope, and response evidence.' },
+              { key: 'B', text: 'Only the analyst who closed the incident', explanation: 'The closer is useful metadata but does not document the attack or response timeline.' },
+              { key: 'C', text: 'Only the final severity value', explanation: 'Severity alone does not preserve the evidence or actions that led to the decision.' },
+              { key: 'D', text: 'A screenshot of the dashboard home page', explanation: 'A generic screenshot does not capture the relevant entities, timestamps, or actions.' },
             ],
           },
         ],

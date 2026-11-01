@@ -33,6 +33,7 @@ function App() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [dark, setDark] = useState(false)
   const [loadingExam, setLoadingExam] = useState(false)
+  const [submittingExam, setSubmittingExam] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -104,20 +105,28 @@ function App() {
 
   async function submitExam() {
     if (!sessionId) return
+    setSubmittingExam(true)
+    setErrorMessage(null)
     const payload = examItems
       .filter((item) => answers[item.instanceId] !== undefined)
       .map((item) => ({ questionId: item.question.id, answer: answers[item.instanceId] }))
 
-    const res = await fetch(`${API_BASE_URL}/api/exam/${sessionId}/submit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answers: payload }),
-    })
-
-    const data = await res.json()
-    setResult(data)
-    setScreen('results')
-    loadSummary()
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/exam/${sessionId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: payload }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || `Submit service returned ${res.status}`)
+      setResult(data)
+      setScreen('results')
+      loadSummary()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to submit the exam.')
+    } finally {
+      setSubmittingExam(false)
+    }
   }
 
   function renderHome() {
@@ -192,6 +201,11 @@ function App() {
             Case study section: use the scenario details above to answer each case question.
           </p>
         )}
+        {errorMessage && (
+          <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-100">
+            {errorMessage}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -210,9 +224,10 @@ function App() {
           </button>
           <button
             onClick={submitExam}
+            disabled={submittingExam}
             className="ml-auto rounded-md bg-emerald-600 px-4 py-2 text-sm text-white"
           >
-            Submit Exam
+            {submittingExam ? 'Submitting...' : 'Submit Exam'}
           </button>
         </div>
       </div>

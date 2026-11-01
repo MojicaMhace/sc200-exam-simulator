@@ -55,7 +55,7 @@ async function main() {
     const requestedTotal = Number(req.body?.totalQuestions || 57);
     const total = Number.isFinite(requestedTotal) && requestedTotal > 0 ? Math.floor(requestedTotal) : 57;
     const standardQuestions = await db.all(
-      "SELECT id, domain FROM questions WHERE question_type != 'case_study' ORDER BY RANDOM()",
+      "SELECT id, domain FROM questions WHERE question_type != 'case_study'",
     );
     const caseQuestions = await db.all(
       "SELECT id, validated_answer_json FROM questions WHERE question_type = 'case_study' ORDER BY sequence ASC",
@@ -108,9 +108,12 @@ async function main() {
     let correct = 0;
     let answeredPoints = 0;
     let processedAnswers = 0;
+    const submittedQuestionIds = new Set();
 
     for (const item of answers) {
       if (!sessionQuestionIds.has(item.questionId)) continue;
+      if (submittedQuestionIds.has(item.questionId)) continue;
+      submittedQuestionIds.add(item.questionId);
       processedAnswers += 1;
       const q = await db.get('SELECT validated_answer_json, question_type FROM questions WHERE id = ?', [item.questionId]);
       if (!q) continue;
@@ -185,21 +188,18 @@ function selectBlueprintQuestions(questions, total) {
 
   for (const { domain, ratio } of targets) {
     const count = Math.round(total * ratio);
-    const pool = pools.get(domain) || [];
-    for (let index = 0; index < count; index += 1) {
-      if (pool.length > 0) {
-        selected.push(pool[index % pool.length].id);
-      }
-    }
+    const pool = shuffle(pools.get(domain) || []);
+    selected.push(...pool.slice(0, count).map((question) => question.id));
   }
 
-  const remaining = questions.filter((question) => !selected.includes(question.id));
-  for (const question of remaining) {
-    if (selected.length >= total) break;
-    selected.push(question.id);
-  }
-  for (let index = 0; selected.length < total; index += 1) {
-    selected.push(questions[index % questions.length].id);
+  const remaining = shuffle(questions.filter((question) => !selected.includes(question.id)));
+  selected.push(...remaining.slice(0, Math.max(0, total - selected.length)).map((question) => question.id));
+  if (selected.length < total) {
+    const fallback = shuffle(questions);
+    for (const question of fallback) {
+      if (selected.length >= total) break;
+      selected.push(question.id);
+    }
   }
   return shuffle(selected.slice(0, total));
 }

@@ -1,0 +1,342 @@
+[
+  {
+    "id": "SC200-SKILL-001",
+    "sequence": 2001,
+    "title": "KQL Projected Columns",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "You are reviewing DeviceProcessEvents and need only the device name, process name, and timestamp for the last day.",
+    "question": "Which KQL pattern returns only those fields?",
+    "options": [
+      { "key": "A", "text": "DeviceProcessEvents | where Timestamp > ago(1d) | project DeviceName, FileName, Timestamp", "explanation": "where limits the time range and project returns only the requested columns." },
+      { "key": "B", "text": "DeviceProcessEvents | select DeviceName, FileName, Timestamp | time 1d", "explanation": "select and time are not the KQL operators used for this task." },
+      { "key": "C", "text": "DeviceProcessEvents | summarize DeviceName, FileName, Timestamp", "explanation": "summarize requires aggregation expressions and is not a column-selection operator." },
+      { "key": "D", "text": "DeviceProcessEvents | extend DeviceName, FileName, Timestamp", "explanation": "extend creates calculated columns; it does not select existing columns or filter time." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-002",
+    "sequence": 2002,
+    "title": "KQL Aggregation by User",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "You need a count of failed sign-ins grouped by UserPrincipalName and want only users with more than 10 failures.",
+    "question": "Which query structure is correct?",
+    "options": [
+      { "key": "A", "text": "SigninLogs | where ResultType != 0 | project UserPrincipalName | where count > 10", "explanation": "After project there is no count column, and count must be calculated before it can be filtered." },
+      { "key": "B", "text": "SigninLogs | where ResultType != 0 | summarize Failures=count() by UserPrincipalName | where Failures > 10", "explanation": "summarize creates the per-user count, and the following where applies the threshold." },
+      { "key": "C", "text": "SigninLogs | count UserPrincipalName > 10", "explanation": "count is an aggregation function used inside summarize, not a standalone filter command." },
+      { "key": "D", "text": "SigninLogs | distinct UserPrincipalName | limit 10", "explanation": "distinct removes duplicates but does not count failures or apply a threshold." }
+    ],
+    "validatedAnswer": ["B"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-003",
+    "sequence": 2003,
+    "title": "KQL Joining Identity and Process Data",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "You want to correlate a suspicious process with the user who was logged on to the same device.",
+    "question": "Which KQL capability is most appropriate when the events are in separate tables?",
+    "options": [
+      { "key": "A", "text": "union only", "explanation": "union combines rows with a similar shape; it does not match related rows by device or time." },
+      { "key": "B", "text": "project-away only", "explanation": "project-away removes columns and cannot correlate records." },
+      { "key": "C", "text": "join using shared entity fields such as DeviceId", "explanation": "join correlates rows from different tables using a common key, such as DeviceId, with optional time constraints." },
+      { "key": "D", "text": "render timechart", "explanation": "render changes presentation and does not create relationships between tables." }
+    ],
+    "validatedAnswer": ["C"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-004",
+    "sequence": 2004,
+    "title": "KQL Parsing URL Data",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A custom log contains a Url field. You need to extract the host and find requests to a suspicious domain.",
+    "question": "Which function is designed to parse a URL into components?",
+    "options": [
+      { "key": "A", "text": "parse_url()", "explanation": "parse_url returns URL components such as the host, path, and scheme for further filtering." },
+      { "key": "B", "text": "count()", "explanation": "count aggregates rows and does not decompose URL text." },
+      { "key": "C", "text": "bin()", "explanation": "bin rounds values into time or numeric bins and does not parse URLs." },
+      { "key": "D", "text": "arg_max()", "explanation": "arg_max selects a row with a maximum value and does not parse URL components." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-005",
+    "sequence": 2005,
+    "title": "KQL Timechart",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "You need to visualize failed sign-in volume in 15-minute intervals over the last six hours.",
+    "question": "Which query design produces the required time series?",
+    "options": [
+      { "key": "A", "text": "where TimeGenerated > ago(6h) | summarize count()", "explanation": "This creates one total and does not group results into time intervals." },
+      { "key": "B", "text": "where TimeGenerated > ago(6h) | summarize Failures=count() by bin(TimeGenerated, 15m) | render timechart", "explanation": "bin creates 15-minute buckets and render timechart displays the resulting series." },
+      { "key": "C", "text": "sort by TimeGenerated | render piechart", "explanation": "Sorting and a pie chart do not create time buckets." },
+      { "key": "D", "text": "distinct TimeGenerated | render timechart", "explanation": "distinct removes duplicate timestamps but does not count failures." }
+    ],
+    "validatedAnswer": ["B"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-006",
+    "sequence": 2006,
+    "title": "Windows Security Events via AMA",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You need selected Windows security events from Azure VMs and want to control collection by event set.",
+    "question": "Which implementation is appropriate?",
+    "options": [
+      { "key": "A", "text": "Install AMA and associate a DCR that selects the required Windows Security event set", "explanation": "AMA collects the events and the DCR defines the machines and event selection." },
+      { "key": "B", "text": "Install a workbook on every VM", "explanation": "Workbooks visualize data and do not collect Windows events." },
+      { "key": "C", "text": "Use a Sentinel watchlist as the event source", "explanation": "Watchlists contain reference data and do not collect operating-system events." },
+      { "key": "D", "text": "Use an analytics rule to ingest events", "explanation": "Analytics rules detect ingested data; they are not collection agents." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-007",
+    "sequence": 2007,
+    "title": "Windows Event Forwarding",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A domain has many on-premises Windows servers and you want to collect events through a Windows Event Collector rather than install an agent on every server.",
+    "question": "Which design matches Windows Event Forwarding?",
+    "options": [
+      { "key": "A", "text": "Forward events from source computers to a collector, then collect the forwarded events into Sentinel", "explanation": "WEF centralizes Windows event forwarding at a collector before Sentinel ingestion." },
+      { "key": "B", "text": "Send every event directly to a workbook", "explanation": "Workbooks do not receive Windows events and cannot replace WEF or a collector." },
+      { "key": "C", "text": "Put the server names in a watchlist", "explanation": "A watchlist does not transport event records." },
+      { "key": "D", "text": "Use a KQL job as the Windows agent", "explanation": "KQL jobs query retained data and are not collection agents." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-008",
+    "sequence": 2008,
+    "title": "CEF via AMA Architecture",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A network appliance sends Common Event Format messages to a Linux log forwarder.",
+    "question": "What must be configured for Sentinel ingestion?",
+    "options": [
+      { "key": "A", "text": "AMA on the Linux forwarder, the CEF connector, and a DCR associated with the forwarder", "explanation": "CEF via AMA uses the Linux forwarder, connector, and DCR to define collection and routing." },
+      { "key": "B", "text": "AMA on the appliance only, with no connector", "explanation": "The appliance is not the collection endpoint in this design, and the connector is still required." },
+      { "key": "C", "text": "An Entra connector on the forwarder", "explanation": "Entra collection is unrelated to CEF messages from a network appliance." },
+      { "key": "D", "text": "A workbook and a scheduled query", "explanation": "These operate after ingestion and cannot receive CEF by themselves." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-009",
+    "sequence": 2009,
+    "title": "Azure Resource Diagnostic Settings",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You need resource logs from an Azure Key Vault in a Sentinel workspace.",
+    "question": "Which configuration sends the resource logs to Sentinel?",
+    "options": [
+      { "key": "A", "text": "Configure the Key Vault diagnostic setting to send the required categories to the Log Analytics workspace", "explanation": "Resource diagnostic settings route supported resource logs to the selected Log Analytics workspace." },
+      { "key": "B", "text": "Install AMA inside the Key Vault", "explanation": "Managed services such as Key Vault do not accept an operating-system agent installation." },
+      { "key": "C", "text": "Create a user watchlist with vault names", "explanation": "A watchlist does not collect Key Vault resource logs." },
+      { "key": "D", "text": "Create a Defender XDR device group", "explanation": "Device groups manage endpoint scope and are unrelated to Key Vault diagnostics." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-010",
+    "sequence": 2010,
+    "title": "Threat Intelligence Indicator Ingestion",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Your threat intelligence provider supplies STIX/TAXII indicators and the SOC wants detections when those indicators match events.",
+    "question": "Which data path should you use?",
+    "options": [
+      { "key": "A", "text": "Threat intelligence connector into ThreatIntelligenceIndicator, then a matching analytics or hunting query", "explanation": "The connector ingests indicators into the threat-intelligence table, which queries can correlate with event data." },
+      { "key": "B", "text": "Store the feed as a workbook layout", "explanation": "A workbook is presentation content and does not ingest or normalize indicators." },
+      { "key": "C", "text": "Put the feed in a Windows event channel", "explanation": "Windows event channels are not the appropriate storage or ingestion path for STIX/TAXII indicators." },
+      { "key": "D", "text": "Create an incident for every indicator before ingestion", "explanation": "Indicators should be ingested and correlated; creating an incident for each one creates noise." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-011",
+    "sequence": 2011,
+    "title": "Search Job Result Table",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A search job scans a large historical dataset for a hash. You need to investigate the matches repeatedly afterward.",
+    "question": "What should you do with the result?",
+    "options": [
+      { "key": "A", "text": "Use the generated search-result table as the focused source for follow-up KQL investigation", "explanation": "Search jobs make broad historical matches available in a result table that can be queried for detailed analysis." },
+      { "key": "B", "text": "Assume the search result is already a confirmed incident", "explanation": "A match is evidence to validate, not automatically a confirmed incident." },
+      { "key": "C", "text": "Delete the original tables", "explanation": "Search results do not replace source retention and deleting evidence is unsafe." },
+      { "key": "D", "text": "Convert the result to a workbook without reviewing records", "explanation": "Visualization before validation does not establish whether the matches are malicious." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-012",
+    "sequence": 2012,
+    "title": "Summary Rule Use",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A high-volume table must support repeated dashboards that need hourly counts, while raw events are not needed for every dashboard refresh.",
+    "question": "Which Sentinel capability is designed for this repeated aggregation?",
+    "options": [
+      { "key": "A", "text": "A summary rule that periodically aggregates data into a queryable summary table", "explanation": "Summary rules precompute recurring aggregates so dashboards can query smaller, purpose-built results." },
+      { "key": "B", "text": "A one-time search job for every dashboard load", "explanation": "Repeated search jobs are inefficient for a recurring aggregation workload." },
+      { "key": "C", "text": "A device isolation action", "explanation": "Device isolation is response containment and has no aggregation role." },
+      { "key": "D", "text": "A watchlist of hourly totals maintained manually", "explanation": "Manual watchlists are not a reliable automated aggregation mechanism." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-013",
+    "sequence": 2013,
+    "title": "Hunting Query Bookmarks",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "An analyst finds suspicious records during a hunt and wants to preserve the evidence with entities and notes for the investigation.",
+    "question": "What should the analyst use?",
+    "options": [
+      { "key": "A", "text": "A hunting bookmark linked to the investigation", "explanation": "Bookmarks preserve selected hunting results and context so the analyst can use them during investigation." },
+      { "key": "B", "text": "A retention-tier change", "explanation": "Changing retention does not preserve the analyst's selected evidence or notes." },
+      { "key": "C", "text": "A connector restart", "explanation": "Restarting collection does not preserve findings." },
+      { "key": "D", "text": "A password reset for the analyst", "explanation": "A password reset is unrelated to recording hunting evidence." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-014",
+    "sequence": 2014,
+    "title": "NRT Analytics Rule",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A detection must run with very low latency on a supported table and does not require a multi-table join.",
+    "question": "Which analytics rule type should you evaluate?",
+    "options": [
+      { "key": "A", "text": "A monthly workbook", "explanation": "A workbook is reporting content and is not a low-latency detection rule." },
+      { "key": "B", "text": "A near-real-time analytics rule", "explanation": "NRT rules are designed for low-latency detection on supported scenarios and tables." },
+      { "key": "C", "text": "A watchlist upload", "explanation": "A watchlist stores reference data and does not generate detections." },
+      { "key": "D", "text": "A manual notebook export", "explanation": "Manual exports cannot provide continuous low-latency alerting." }
+    ],
+    "validatedAnswer": ["B"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-015",
+    "sequence": 2015,
+    "title": "Connector Validation Query",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "You configured Windows Security Events via AMA and need to validate ingestion before enabling a detection.",
+    "question": "Which query is the best first validation?",
+    "options": [
+      { "key": "A", "text": "SecurityEvent | where TimeGenerated > ago(1h) | summarize count() by Computer", "explanation": "This checks recent records and shows which computers are actually sending events." },
+      { "key": "B", "text": "SecurityEvent | where TimeGenerated > ago(1y) | render piechart", "explanation": "A year-wide visualization is unnecessarily broad and does not directly validate current source coverage." },
+      { "key": "C", "text": "Heartbeat | summarize count()", "explanation": "Heartbeat confirms agent presence but does not prove Windows Security events reached SecurityEvent." },
+      { "key": "D", "text": "SigninLogs | count", "explanation": "Sign-in logs validate an identity connector, not Windows Security Events via AMA." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-016",
+    "sequence": 2016,
+    "title": "Custom Log Ingestion",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "A SaaS vendor provides JSON events through an API and has no built-in Sentinel connector. You need a supported ingestion design.",
+    "question": "Which approach should you evaluate?",
+    "options": [
+      { "key": "A", "text": "Use the Logs Ingestion API with a DCR and a custom table, or a supported custom connector pattern", "explanation": "The API and DCR provide a controlled schema and ingestion path for sources without a built-in connector." },
+      { "key": "B", "text": "Paste JSON into a workbook", "explanation": "Workbooks cannot serve as a durable ingestion pipeline." },
+      { "key": "C", "text": "Rename the JSON file to .evtx", "explanation": "Changing a file extension does not convert an API payload into Windows event data." },
+      { "key": "D", "text": "Create an empty analytics rule", "explanation": "A detection rule cannot collect vendor data." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-017",
+    "sequence": 2017,
+    "title": "Connector Data Collection Scope",
+    "domain": "Manage a security operations environment",
+    "questionType": "single_choice",
+    "scenario": "Only production servers should send Windows security events to the workspace; development servers must be excluded.",
+    "question": "Where should you express this machine scope?",
+    "options": [
+      { "key": "A", "text": "In the DCR association or resource scope used by the connector", "explanation": "DCR associations determine which resources receive the collection configuration." },
+      { "key": "B", "text": "In the incident title", "explanation": "An incident title cannot control data collection." },
+      { "key": "C", "text": "In a workbook color setting", "explanation": "Presentation settings do not control the source machines." },
+      { "key": "D", "text": "In the KQL render command", "explanation": "Rendering affects output display, not which machines send telemetry." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-018",
+    "sequence": 2018,
+    "title": "KQL Empty Results Diagnosis",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A KQL query returns no rows even though the connector dashboard says Connected.",
+    "question": "What should you check first?",
+    "options": [
+      { "key": "A", "text": "Time range, table name, workspace, and whether the expected source has recently ingested records", "explanation": "An empty result can come from an incorrect time range or table as well as a collection problem; these checks separate query and ingestion causes." },
+      { "key": "B", "text": "Change the portal theme", "explanation": "Portal appearance does not affect query results." },
+      { "key": "C", "text": "Delete the connector", "explanation": "Deleting the connector destroys configuration before the cause is understood." },
+      { "key": "D", "text": "Create a second identical rule", "explanation": "Duplicating a rule does not fix a query or ingestion issue." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-019",
+    "sequence": 2019,
+    "title": "Notebook Hunting Workflow",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A hunter wants a repeatable notebook that retrieves data, transforms it, records findings, and can be rerun by another analyst.",
+    "question": "Which practice best supports this workflow?",
+    "options": [
+      { "key": "A", "text": "Use the Sentinel MCP Server or approved notebook connection, parameterize time and entities, and record query outputs", "explanation": "A reusable notebook needs an approved connection, explicit parameters, and preserved outputs so another analyst can reproduce the hunt." },
+      { "key": "B", "text": "Copy screenshots from the portal into the notebook", "explanation": "Screenshots are not reproducible data or executable hunting steps." },
+      { "key": "C", "text": "Hard-code a personal token in every cell", "explanation": "Personal embedded secrets are unsafe and make the notebook difficult to transfer." },
+      { "key": "D", "text": "Delete the notebook after exporting a PDF", "explanation": "Deleting the executable workflow removes reproducibility." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  },
+  {
+    "id": "SC200-SKILL-020",
+    "sequence": 2020,
+    "title": "KQL Materialized Aggregation",
+    "domain": "Perform threat hunting",
+    "questionType": "single_choice",
+    "scenario": "A query repeatedly computes the same high-volume aggregation and interactive performance is poor.",
+    "question": "Which improvement should you consider?",
+    "options": [
+      { "key": "A", "text": "Use a summary rule or other pre-aggregation strategy when the workload is recurring", "explanation": "Pre-aggregating recurring results reduces the amount of raw data scanned for each query." },
+      { "key": "B", "text": "Add more columns with project-away", "explanation": "Removing columns can reduce payload but does not solve a recurring high-volume aggregation by itself." },
+      { "key": "C", "text": "Run the same query more often", "explanation": "More frequent raw scans increase work and do not improve performance." },
+      { "key": "D", "text": "Move the query into a watchlist", "explanation": "Watchlists store reference values and cannot execute aggregations." }
+    ],
+    "validatedAnswer": ["A"],
+    "validationStatus": "Verified — Current"
+  }
+]
